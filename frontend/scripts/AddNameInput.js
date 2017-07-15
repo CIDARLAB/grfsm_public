@@ -5,7 +5,7 @@ var ReactDOM = require('react-dom');
 var D3 = require('d3');
 var $ = require('jQuery');
 
-var AutoComplete = require('react-autocomplete');
+var Select = require('react-select');
 
 //http GET request for synbio CDS dna
 //https://synbiohub.programmingbiology.org/remoteSearch/role%3D%3Chttp%3A%2F%2Fidentifiers.org%2Fso%2FSO%3A0000316%3E%26/?offset=0&limit=50
@@ -33,6 +33,31 @@ const addNameInputStyles = {
 		cursor: 'pointer',
 	},
 };
+
+var getGeneList = function(input, callback) {
+  fetch(`https://synbiohub.programmingbiology.org/remoteSearch/role%3D%3Chttp%3A%2F%2Fidentifiers.org%2Fso%2FSO%3A0000316%3E%26${input}/?offset=0&limit=50`)
+    .then((response) => {
+		return response.json();
+    }).then((json) => {
+		let options = [];
+		json.forEach(function(obj) { 
+			options.push({value: obj.displayId.toLowerCase(), label: obj.name})
+		});
+		callback(options);
+    });
+}
+
+var getOptions = function(input, callback) {
+  setTimeout(function() {
+        getGeneList(input, function(data) {
+            callback(null, {
+                options: data,
+                complete: true,
+            });
+        });
+    }, 50);
+};
+
 //AddName box
 const AddNameInput = React.createClass({
 	getInitialState() {
@@ -62,29 +87,25 @@ const AddNameInput = React.createClass({
 	onMouseLeave() {
 		this.setState({ hover: false });
 	},
-	onUserEnter(evt) {
-		evt.preventDefault();
-		this.props.onUserEnter();
-	},
-	handleChange(evt) {
-		evt.preventDefault();
-		console.log(evt.target.value);
-		this.setState({ selectedGene: evt.target.value, selectableList: this.state.geneList });
+	onUserEnter(value) {
+		console.log(value.label);
 		this.props.changeGeneName(
-			evt.target.value
+			value.label
 		);
+		this.setState({ selectedGene: value });
 	},
-	selectItemFromMouse(item) {
-		console.log(item);
-		this.props.changeGeneName(
-			item
-		);
-	},
-	MatchGene(gene, value) {
-	  return (
-	    gene.toLowerCase().indexOf(value.toLowerCase()) !== -1
-	   )
-	},
+	// valueChanged(value) {
+	// 	console.log(value);
+	// 	this.props.changeGeneName(
+	// 		value
+	// 	);
+	// 	this.setState({ selectedGene: value });
+	// },
+	// MatchGene(gene, value) {
+	//   return (
+	//     gene.toLowerCase().indexOf(value.toLowerCase()) !== -1
+	//    )
+	// },
 	render() {
 		const height = this.props.height;
 		const width = this.props.width;
@@ -118,27 +139,15 @@ const AddNameInput = React.createClass({
 		}
 		return (
 			<div>
-				<form style={formStyle} onSubmit={this.onUserEnter}>				 
-					<AutoComplete
-			          style={textStyle}
-			          value={this.state.selectedGene}
-			          items={this.state.selectableList}
-			          getItemValue={(item) => item}
-			          onSelect={(value, item) => {
-			          	this.selectItemFromMouse(item);
-			            this.setState({ selectedGene: value, selectableList: [ item ] });
-			          }}
-			          onChange={(event, value) => {
-			            this.handleChange(event);
-			          }}
-			          shouldItemRender={this.MatchGene}
-			          renderItem={(item, isHighlighted) =>
-					    <div style={{ background: isHighlighted ? 'lightgray' : 'white' }}>
-					      {item}
-					    </div>
-					  }
-			        />
+				<Select.Async
+				    name="form-field-name"
+				    value={this.state.selectedGene.label}
+				    loadOptions={getOptions}
+				    onChange={this.onUserEnter}
+				/>
 				{/*
+				<form style={formStyle} onSubmit={this.onUserEnter}>				 
+				
 					<input
 						ref="newGeneName"
 						type="text"
@@ -147,7 +156,7 @@ const AddNameInput = React.createClass({
 						value={newGeneName}
 						onChange={this.handleChange}
 					/>
-					*/}
+					
 					<input
 						type="submit"
 						style={submitStyle}
@@ -156,6 +165,7 @@ const AddNameInput = React.createClass({
 						onMouseLeave={this.onMouseLeave}
 					/>
 				</form>
+				*/}
 			</div>
 		);
 	}
