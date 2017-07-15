@@ -217,6 +217,7 @@ const App = React.createClass({
 	*/
 	onUserEnter() {
 		const newGeneName = this.state.newGeneName;
+		console.log(this.state.newGeneName);
 		const newID = this.state.genes.length;
 
 		//Chooses the color to associate with this gene randomly at first
@@ -259,6 +260,7 @@ const App = React.createClass({
 		this.setState({
 			newGeneName: newGeneName,
 		});
+		console.log(newGeneName);
 	},
 	/*
 	* Given a gene id, removes that gene from the list of genes in the state.

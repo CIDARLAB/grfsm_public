@@ -3,6 +3,12 @@
 var React = require('react');
 var ReactDOM = require('react-dom');
 var D3 = require('d3');
+var $ = require('jQuery');
+
+var AutoComplete = require('react-autocomplete');
+
+//http GET request for synbio CDS dna
+//https://synbiohub.programmingbiology.org/remoteSearch/role%3D%3Chttp%3A%2F%2Fidentifiers.org%2Fso%2FSO%3A0000316%3E%26/?offset=0&limit=50
 
 const addNameInputStyles = {
 	textStyle: {
@@ -31,9 +37,25 @@ const addNameInputStyles = {
 const AddNameInput = React.createClass({
 	getInitialState() {
 		return {
+			selectedGene: '',
+			geneList: [],
 			hover: false
 		};
 	},
+	componentDidMount(){
+		this.GeneList();
+	},
+	GeneList() {
+    return $.getJSON('https://synbiohub.programmingbiology.org/remoteSearch/role%3D%3Chttp%3A%2F%2Fidentifiers.org%2Fso%2FSO%3A0000316%3E%26/?offset=0&limit=50')
+      .then((data) => {
+      	let temp_geneList = [];
+      	$.each(data, function(index, element) {
+      		temp_geneList.push(element.name);
+	  	});
+	  	this.setState({ geneList: temp_geneList });
+      });
+      console.log(geneList);
+ 	},
 	onMouseEnter() {
 		this.setState({ hover: true });
 	},
@@ -46,8 +68,15 @@ const AddNameInput = React.createClass({
 	},
 	handleChange(evt) {
 		evt.preventDefault();
+		console.log(evt.target.value);
 		this.props.changeGeneName(
-			this.refs.newGeneName.value
+			evt.target.value
+		);
+	},
+	selectItemFromMouse(item) {
+		console.log(item);
+		this.props.changeGeneName(
+			item
 		);
 	},
 	render() {
@@ -83,7 +112,28 @@ const AddNameInput = React.createClass({
 		}
 		return (
 			<div>
-				<form style={formStyle} onSubmit={this.onUserEnter}>
+				
+				<form style={formStyle} onSubmit={this.onUserEnter}>				 
+					<AutoComplete
+			          style={textStyle}
+			          value={this.state.selectedGene}
+			          items={this.state.geneList}
+			          getItemValue={(item) => item}
+			          onSelect={(value, item) => {
+			          	this.selectItemFromMouse(item);
+			            this.setState({ selectedGene: value });
+			          }}
+			          onChange={(event, value) => {
+			            this.handleChange(event);
+			            this.setState({ selectedGene: value });
+			          }}
+			          renderItem={(item, isHighlighted) =>
+					    <div style={{ background: isHighlighted ? 'lightgray' : 'white' }}>
+					      {item}
+					    </div>
+					  }
+			        />
+				{/*
 					<input
 						ref="newGeneName"
 						type="text"
@@ -92,6 +142,7 @@ const AddNameInput = React.createClass({
 						value={newGeneName}
 						onChange={this.handleChange}
 					/>
+					*/}
 					<input
 						type="submit"
 						style={submitStyle}
