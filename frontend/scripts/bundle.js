@@ -58158,6 +58158,7 @@ var AddNameInput = React.createClass({
 	getInitialState: function getInitialState() {
 		return {
 			selectedGene: '',
+			selectableList: [],
 			geneList: [],
 			hover: false
 		};
@@ -58173,9 +58174,8 @@ var AddNameInput = React.createClass({
 			$.each(data, function (index, element) {
 				temp_geneList.push(element.name);
 			});
-			_this.setState({ geneList: temp_geneList });
+			_this.setState({ selectableList: temp_geneList, geneList: temp_geneList });
 		});
-		console.log(geneList);
 	},
 	onMouseEnter: function onMouseEnter() {
 		this.setState({ hover: true });
@@ -58190,11 +58190,15 @@ var AddNameInput = React.createClass({
 	handleChange: function handleChange(evt) {
 		evt.preventDefault();
 		console.log(evt.target.value);
+		this.setState({ selectedGene: evt.target.value, selectableList: this.state.geneList });
 		this.props.changeGeneName(evt.target.value);
 	},
 	selectItemFromMouse: function selectItemFromMouse(item) {
 		console.log(item);
 		this.props.changeGeneName(item);
+	},
+	MatchGene: function MatchGene(gene, value) {
+		return gene.toLowerCase().indexOf(value.toLowerCase()) !== -1;
 	},
 	render: function render() {
 		var _this2 = this;
@@ -58235,20 +58239,22 @@ var AddNameInput = React.createClass({
 				'form',
 				{ style: formStyle, onSubmit: this.onUserEnter },
 				React.createElement(AutoComplete, {
-					style: textStyle,
+					menuStyle: { borderRadius: '1em 0em 0em 1em',
+						borderColor: 'black transparent black black',
+						borderStyle: 'solid' },
 					value: this.state.selectedGene,
-					items: this.state.geneList,
+					items: this.state.selectableList,
 					getItemValue: function getItemValue(item) {
 						return item;
 					},
 					onSelect: function onSelect(value, item) {
 						_this2.selectItemFromMouse(item);
-						_this2.setState({ selectedGene: value });
+						_this2.setState({ selectedGene: value, selectableList: [item] });
 					},
 					onChange: function onChange(event, value) {
 						_this2.handleChange(event);
-						_this2.setState({ selectedGene: value });
 					},
+					shouldItemRender: this.MatchGene,
 					renderItem: function renderItem(item, isHighlighted) {
 						return React.createElement(
 							'div',

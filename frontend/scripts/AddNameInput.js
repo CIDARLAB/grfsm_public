@@ -38,6 +38,7 @@ const AddNameInput = React.createClass({
 	getInitialState() {
 		return {
 			selectedGene: '',
+			selectableList: [],
 			geneList: [],
 			hover: false
 		};
@@ -52,9 +53,8 @@ const AddNameInput = React.createClass({
       	$.each(data, function(index, element) {
       		temp_geneList.push(element.name);
 	  	});
-	  	this.setState({ geneList: temp_geneList });
+	  	this.setState({ selectableList: temp_geneList, geneList: temp_geneList });
       });
-      console.log(geneList);
  	},
 	onMouseEnter() {
 		this.setState({ hover: true });
@@ -69,6 +69,7 @@ const AddNameInput = React.createClass({
 	handleChange(evt) {
 		evt.preventDefault();
 		console.log(evt.target.value);
+		this.setState({ selectedGene: evt.target.value, selectableList: this.state.geneList });
 		this.props.changeGeneName(
 			evt.target.value
 		);
@@ -78,6 +79,11 @@ const AddNameInput = React.createClass({
 		this.props.changeGeneName(
 			item
 		);
+	},
+	MatchGene(gene, value) {
+	  return (
+	    gene.toLowerCase().indexOf(value.toLowerCase()) !== -1
+	   )
 	},
 	render() {
 		const height = this.props.height;
@@ -112,21 +118,20 @@ const AddNameInput = React.createClass({
 		}
 		return (
 			<div>
-				
 				<form style={formStyle} onSubmit={this.onUserEnter}>				 
 					<AutoComplete
 			          style={textStyle}
 			          value={this.state.selectedGene}
-			          items={this.state.geneList}
+			          items={this.state.selectableList}
 			          getItemValue={(item) => item}
 			          onSelect={(value, item) => {
 			          	this.selectItemFromMouse(item);
-			            this.setState({ selectedGene: value });
+			            this.setState({ selectedGene: value, selectableList: [ item ] });
 			          }}
 			          onChange={(event, value) => {
 			            this.handleChange(event);
-			            this.setState({ selectedGene: value });
 			          }}
+			          shouldItemRender={this.MatchGene}
 			          renderItem={(item, isHighlighted) =>
 					    <div style={{ background: isHighlighted ? 'lightgray' : 'white' }}>
 					      {item}
