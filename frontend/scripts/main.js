@@ -233,6 +233,19 @@ const App = React.createClass({
 			genes: genes,
 		});
 	},
+	/*
+	* Changes the value of the newGeneName state variable
+	*/
+	changeGeneName(newGeneName) {
+		this.setState({
+			newGeneName: newGeneName,
+		},
+		function(){
+			console.log('main.js:changeGeneName - ' + this.state.newGeneName);
+			this.onUserEnter()
+		}
+		);
+	},
 	onUserChangeColor(geneId, color) {
 		const genes = this.state.genes;
 		let newGenesArray = [];
@@ -252,19 +265,6 @@ const App = React.createClass({
 		this.setState({
 			genes: newGenesArray,
 		});
-	},
-	/*
-	* Changes the value of the newGeneName state variable
-	*/
-	changeGeneName(newGeneName) {
-		this.setState({
-			newGeneName: newGeneName,
-		},
-		function(){
-			console.log('main.js:changeGeneName - ' + this.state.newGeneName);
-			this.onUserEnter()
-		}
-		);
 	},
 	/*
 	* Given a gene id, removes that gene from the list of genes in the state.

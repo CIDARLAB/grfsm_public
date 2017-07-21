@@ -376,6 +376,7 @@ const CircuitDiagram = React.createClass({
 					circuitsPartMapping={circuitsPartMapping[0]}
 					getGeneInformation={this.getGeneInformation}
 					noCircuitsWereFound={noCircuitsWereFound}
+					isMainCircuit={true}
 					highlight={highlighted[0]}
 				/>
 				<div style={bottomHalfStyles}>
@@ -722,6 +723,7 @@ const CircuitDiagramNavBar = React.createClass({
 	clickedPDF() {
 		this.props.clickedPDF();
 	},
+	
 	render() {
 		const pageTitle = this.props.pageTitle;
 		const pageWidth = this.props.pageWidth;

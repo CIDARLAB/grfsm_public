@@ -2,6 +2,7 @@
 
 var React = require('react');
 var ReactDOM = require('react-dom');
+// var ReactXML = require('react-xml-parser');
 var D3 = require('d3');
 var $ = require('jQuery');
 
@@ -68,19 +69,6 @@ const AddNameInput = React.createClass({
 			hover: false
 		};
 	},
-	componentDidMount(){
-		this.GeneList();
-	},
-	GeneList() {
-    return $.getJSON('https://synbiohub.programmingbiology.org/remoteSearch/role%3D%3Chttp%3A%2F%2Fidentifiers.org%2Fso%2FSO%3A0000316%3E%26/?offset=0&limit=50')
-      .then((data) => {
-      	let temp_geneList = [];
-      	$.each(data, function(index, element) {
-      		temp_geneList.push(element.name);
-	  	});
-	  	this.setState({ selectableList: temp_geneList, geneList: temp_geneList });
-      });
- 	},
 	onMouseEnter() {
 		this.setState({ hover: true });
 	},
@@ -89,23 +77,12 @@ const AddNameInput = React.createClass({
 	},
 	onUserEnter(value) {
 		console.log(value.label);
+
 		this.props.changeGeneName(
-			value.label
+			value.label,
 		);
 		this.setState({ selectedGene: value });
 	},
-	// valueChanged(value) {
-	// 	console.log(value);
-	// 	this.props.changeGeneName(
-	// 		value
-	// 	);
-	// 	this.setState({ selectedGene: value });
-	// },
-	// MatchGene(gene, value) {
-	//   return (
-	//     gene.toLowerCase().indexOf(value.toLowerCase()) !== -1
-	//    )
-	// },
 	render() {
 		const height = this.props.height;
 		const width = this.props.width;
@@ -145,27 +122,6 @@ const AddNameInput = React.createClass({
 				    loadOptions={getOptions}
 				    onChange={this.onUserEnter}
 				/>
-				{/*
-				<form style={formStyle} onSubmit={this.onUserEnter}>				 
-				
-					<input
-						ref="newGeneName"
-						type="text"
-						style={textStyle}
-						placeholder={placeholder}
-						value={newGeneName}
-						onChange={this.handleChange}
-					/>
-					
-					<input
-						type="submit"
-						style={submitStyle}
-						value={submitValue}
-						onMouseEnter={this.onMouseEnter}
-						onMouseLeave={this.onMouseLeave}
-					/>
-				</form>
-				*/}
 			</div>
 		);
 	}

@@ -59494,11 +59494,10 @@ module.exports = AddGenePage;
 
 var React = require('react');
 var ReactDOM = require('react-dom');
+// var ReactXML = require('react-xml-parser');
 var D3 = require('d3');
 var $ = require('jQuery');
 
-// var AutoComplete = require('react-autocomplete');
-// var VirtualizedSelect = require('react-virtualized-select');
 var Select = require('react-select');
 
 //http GET request for synbio CDS dna
@@ -59562,20 +59561,6 @@ var AddNameInput = React.createClass({
 			hover: false
 		};
 	},
-	componentDidMount: function componentDidMount() {
-		this.GeneList();
-	},
-	GeneList: function GeneList() {
-		var _this = this;
-
-		return $.getJSON('https://synbiohub.programmingbiology.org/remoteSearch/role%3D%3Chttp%3A%2F%2Fidentifiers.org%2Fso%2FSO%3A0000316%3E%26/?offset=0&limit=50').then(function (data) {
-			var temp_geneList = [];
-			$.each(data, function (index, element) {
-				temp_geneList.push(element.name);
-			});
-			_this.setState({ selectableList: temp_geneList, geneList: temp_geneList });
-		});
-	},
 	onMouseEnter: function onMouseEnter() {
 		this.setState({ hover: true });
 	},
@@ -59584,22 +59569,10 @@ var AddNameInput = React.createClass({
 	},
 	onUserEnter: function onUserEnter(value) {
 		console.log(value.label);
+
 		this.props.changeGeneName(value.label);
 		this.setState({ selectedGene: value });
 	},
-
-	// valueChanged(value) {
-	// 	console.log(value);
-	// 	this.props.changeGeneName(
-	// 		value
-	// 	);
-	// 	this.setState({ selectedGene: value });
-	// },
-	// MatchGene(gene, value) {
-	//   return (
-	//     gene.toLowerCase().indexOf(value.toLowerCase()) !== -1
-	//    )
-	// },
 	render: function render() {
 		var height = this.props.height;
 		var width = this.props.width;
@@ -60248,6 +60221,7 @@ var CircuitDiagram = React.createClass({
 					circuitsPartMapping: circuitsPartMapping[0],
 					getGeneInformation: this.getGeneInformation,
 					noCircuitsWereFound: noCircuitsWereFound,
+					isMainCircuit: true,
 					highlight: highlighted[0]
 				}),
 				React.createElement(
@@ -62558,10 +62532,13 @@ var GeneticCircuit = React.createClass({
 
 		//Subtract 40 so its not tight at the borders
 		var width = this.props.pageWidth - 40;
+		var fittedTextWidth = this.props.pageWidth;
 
 		//Arbitrary y coordinate to start from
 		var maxCircuitHeight = 40;
 		var elementHeight = Math.min(maxCircuitHeight, height / 2);
+
+		var isMainCircuit = this.props.isMainCircuit;
 
 		var currentPointOnDNA = 0;
 
@@ -62576,7 +62553,8 @@ var GeneticCircuit = React.createClass({
 		var interval = width / numberOfNon5s;
 
 		var partIdForKey = 1;
-
+		var lastCompID = 0;
+		var staggerHeight = 0;
 		/*
   * Amount of padding depends on how many circuits are being displayed on the page.
   * So we use this.props.paddingBottom to determine if there should be padding on the
@@ -62607,7 +62585,7 @@ var GeneticCircuit = React.createClass({
 				{ style: circuitExistsStyle },
 				React.createElement(
 					'svg',
-					{ width: width, height: height, id: 'genCirc' },
+					{ width: fittedTextWidth, height: height, id: 'genCirc' },
 					React.createElement(
 						'g',
 						{ stroke: 'black' },
@@ -62641,13 +62619,29 @@ var GeneticCircuit = React.createClass({
 							geneInfo = geneMapping[partOriginalLocationId];
 						}
 						partIdForKey += 1;
+
+						// Blade: this code was trying to stagger circuit components that were next to each other,
+						// but the more that I played around with it, I don't think this was necessary...
+						// if( (lastCompID < 0 && componentId < 0) || (lastCompID > 0 && componentId > 0) )
+						// {
+						// 	staggerHeight = staggerHeight == 12 ? 0 : 12;
+						// }
+						// else
+						// {
+						// 	staggerHeight = 0;
+						// }
+
+						lastCompID = componentId;
+						console.log("[GeneticCircuit:render]: " + componentId);
 						return React.createElement(IndividualPart, {
 							key: partIdForKey,
 							partId: componentId,
 							elementHeight: elementHeight,
+							textHeightBump: staggerHeight,
 							startPointOnDNA: currentPointOnDNA - interval,
 							endPointOnDna: currentPointOnDNA,
 							geneInfo: geneInfo,
+							isMainCircuit: isMainCircuit,
 							getGeneInformation: _this.getGeneInformation,
 							linePosition: elementHeight
 						});
@@ -62706,6 +62700,7 @@ var IndividualPart = React.createClass({
 
 		var partId = Math.abs(this.props.partId);
 		var components = partIdToComponents[partId];
+		console.log("[IndividualPart:render]: " + partId + " " + components);
 		var elementHeight = this.props.elementHeight;
 
 		var geneInfo = this.props.geneInfo;
@@ -62714,8 +62709,11 @@ var IndividualPart = React.createClass({
 		var endPointOnDna = this.props.endPointOnDna;
 		var currentPointOnDNA = startPointOnDNA;
 		var componentId = 0;
+		var staggerHeight = this.props.textHeightBump;
+		var prevOrientation = [0];
 
 		var linePosition = this.props.linePosition;
+		var isMainCircuit = this.props.isMainCircuit;
 
 		var degreesOfRotation = 0;
 		if (this.props.partId < 0) {
@@ -62736,6 +62734,7 @@ var IndividualPart = React.createClass({
 				currentPointOnDNA += interval;
 				var pieceToShow = null;
 				var orientation = 1;
+
 				//Some parts have multiple genes and we need to know which gene for a part we are creating
 				//Move where we start from up by interval, since each component
 				//has the same width
@@ -62746,6 +62745,8 @@ var IndividualPart = React.createClass({
 							siteId: partId,
 							stroke: 'black',
 							orientation: orientation,
+							parentOrientation: degreesOfRotation,
+							isMainCircuit: isMainCircuit,
 							strokeWidth: 1,
 							fill: 'black',
 							height: elementHeight,
@@ -62756,10 +62757,19 @@ var IndividualPart = React.createClass({
 					case '-P':
 						orientation *= -1;
 					case 'P':
+						if (prevOrientation.length > 0) {
+							var iterator = 0;
+							for (var i = prevOrientation.length; i > 0; i--) {
+								if (prevOrientation[i] == orientation) iterator++;
+							}
+							staggerHeight = iterator % 2 == 0 ? staggerHeight + 0 : staggerHeight + 12;
+						} else staggerHeight = staggerHeight == 12 ? 0 : 12;
 						pieceToShow = React.createElement(PromoterPiece, {
 							key: componentId,
 							orientation: orientation,
+							parentOrientation: degreesOfRotation,
 							height: elementHeight,
+							textHeightBump: staggerHeight,
 							strokeWidth: 3,
 							startPointOnDNA: currentPointOnDNA - interval,
 							endPointOnDna: currentPointOnDNA,
@@ -62775,14 +62785,17 @@ var IndividualPart = React.createClass({
 						var geneIdToAdd = geneInfo[geneNumber];
 						var individualGeneInfo = _this2.getGeneInformation(geneIdToAdd);
 						var fillColor = individualGeneInfo['color'];
+						var geneName = individualGeneInfo['geneName'];
 						pieceToShow = React.createElement(GenePiece, {
 							key: componentId,
 							orientation: orientation,
+							parentOrientation: degreesOfRotation,
 							height: elementHeight,
 							startPointOnDNA: currentPointOnDNA - interval,
 							endPointOnDna: currentPointOnDNA,
 							linePosition: linePosition,
 							fill: fillColor,
+							title: geneName,
 							stroke: 'black',
 							strokeWidth: 5
 						});
@@ -62791,10 +62804,19 @@ var IndividualPart = React.createClass({
 					case '-T':
 						orientation *= -1;
 					case 'T':
+						if (prevOrientation.length > 0) {
+							var _iterator = 0;
+							for (var _i = prevOrientation.length; _i > 0; _i--) {
+								if (prevOrientation[_i] == orientation) _iterator++;
+							}
+							staggerHeight = _iterator % 2 == 0 ? staggerHeight + 0 : staggerHeight + 12;
+						} else staggerHeight = staggerHeight == 12 ? 0 : 12;
 						pieceToShow = React.createElement(TerminatorPiece, {
 							key: componentId,
 							orientation: orientation,
+							parentOrientation: degreesOfRotation,
 							height: elementHeight,
+							textHeightBump: staggerHeight,
 							startPointOnDNA: currentPointOnDNA - interval,
 							endPointOnDna: currentPointOnDNA,
 							linePosition: linePosition,
@@ -62805,10 +62827,19 @@ var IndividualPart = React.createClass({
 					case '-t':
 						orientation *= -1;
 					case 't':
+						if (prevOrientation.length > 0) {
+							var _iterator2 = 0;
+							for (var _i2 = prevOrientation.length; _i2 > 0; _i2--) {
+								if (prevOrientation[_i2] == orientation) _iterator2++;
+							}
+							staggerHeight = _iterator2 % 2 == 0 ? staggerHeight + 0 : staggerHeight + 12;
+						} else staggerHeight = staggerHeight == 12 ? 0 : 12;
 						pieceToShow = React.createElement(TerminatorPiece, {
 							key: componentId,
 							orientation: orientation,
+							parentOrientation: degreesOfRotation,
 							height: elementHeight,
+							textHeightBump: staggerHeight,
 							startPointOnDNA: currentPointOnDNA - interval,
 							endPointOnDna: currentPointOnDNA,
 							linePosition: linePosition,
@@ -62820,6 +62851,8 @@ var IndividualPart = React.createClass({
 						break;
 				}
 				componentId += 1;
+				prevOrientation.push(orientation);
+				console.log("[GeneticCircuit:IndividualPart:Render()] " + prevOrientation);
 				return pieceToShow;
 			})
 		);
@@ -62831,6 +62864,7 @@ var PromoterPiece = React.createClass({
 	displayName: 'PromoterPiece',
 	render: function render() {
 		var orientation = this.props.orientation;
+		var parentOrientation = this.props.parentOrientation;
 		var height = this.props.height;
 		var strokeWidth = this.props.strokeWidth;
 
@@ -62838,16 +62872,33 @@ var PromoterPiece = React.createClass({
 		var endPointOnDna = this.props.endPointOnDna;
 
 		var linePosition = this.props.linePosition;
+		var staggerHeight = this.props.textHeightBump;
 
 		var degreesOfRotation = 0;
 		if (orientation === -1) {
 			degreesOfRotation = 180;
 		}
-		var transform = "rotate(" + degreesOfRotation + " " + (endPointOnDna + startPointOnDNA) / 2 + " " + height + ")";
 
+		var resetRotation = degreesOfRotation + parentOrientation == 180 ? 180 : 0;
+		var xTextPosition = resetRotation == 0 ? (endPointOnDna + startPointOnDNA) / 2 : 0;
+
+		var yTextPosition = resetRotation == 0 ? 12 + staggerHeight : 0 - staggerHeight;
+		console.log("[PromoterPiece:render] " + yTextPosition + " " + staggerHeight + " " + resetRotation);
+
+		var transform = "rotate(" + degreesOfRotation + " " + (endPointOnDna + startPointOnDNA) / 2 + " " + height + ")";
+		var pieceNameTransform = "rotate(" + resetRotation + " " + (endPointOnDna + startPointOnDNA) / 4 + ",0)";
 		return React.createElement(
 			'g',
 			{ transform: transform },
+			React.createElement(
+				'g',
+				{ transform: pieceNameTransform },
+				React.createElement(
+					'text',
+					{ fill: 'black', fontFamily: 'Hind, sans-serif', fontSize: '12', textAnchor: 'middle', x: xTextPosition, y: yTextPosition },
+					"Promoter"
+				)
+			),
 			React.createElement('image', {
 				xlinkHref: "./img/SBOL/promoter.svg",
 				height: height,
@@ -62861,11 +62912,19 @@ var PromoterPiece = React.createClass({
 	}
 });
 
+var geneNameStyle = {
+	textStyle: {
+		fontSize: 20,
+		fontFamily: 'Open Sans, sans-serif'
+	}
+};
+
 //An svg gene component
 var GenePiece = React.createClass({
 	displayName: 'GenePiece',
 	render: function render() {
 		var orientation = this.props.orientation;
+		var parentOrientation = this.props.parentOrientation;
 		var height = this.props.height;
 
 		var startPointOnDNA = this.props.startPointOnDNA;
@@ -62874,6 +62933,7 @@ var GenePiece = React.createClass({
 		var linePosition = this.props.linePosition;
 
 		var fill = this.props.fill;
+		var title = this.props.title;
 
 		var strokeWidth = this.props.strokeWidth;
 		var stroke = this.props.stroke;
@@ -62882,10 +62942,25 @@ var GenePiece = React.createClass({
 		if (orientation === -1) {
 			degreesOfRotation = 180;
 		}
+
+		var resetRotation = degreesOfRotation + parentOrientation == 180 ? 180 : 0;
+		var xTextPosition = resetRotation == 0 ? (endPointOnDna + startPointOnDNA) / 2 : 0;
+		var yTextPosition = resetRotation == 0 ? 12 : 0;
+
 		var transform = "rotate(" + degreesOfRotation + " " + (endPointOnDna + startPointOnDNA) / 2 + " " + height + ")";
+		var pieceNameTransform = "rotate(" + resetRotation + " " + (endPointOnDna + startPointOnDNA) / 4 + ",0)";
 		return React.createElement(
 			'g',
 			{ transform: transform },
+			React.createElement(
+				'g',
+				{ transform: pieceNameTransform },
+				React.createElement(
+					'text',
+					{ fill: 'black', fontFamily: 'Hind, sans-serif', fontSize: '12', textAnchor: 'middle', x: xTextPosition, y: yTextPosition },
+					title
+				)
+			),
 			React.createElement(
 				'svg',
 				{ viewBox: "0 0 50 100",
@@ -62909,12 +62984,14 @@ var TerminatorPiece = React.createClass({
 	displayName: 'TerminatorPiece',
 	render: function render() {
 		var orientation = this.props.orientation;
+		var parentOrientation = this.props.parentOrientation;
 		var height = this.props.height;
 
 		var startPointOnDNA = this.props.startPointOnDNA;
 		var endPointOnDna = this.props.endPointOnDna;
 
 		var linePosition = this.props.linePosition;
+		var staggerHeight = this.props.textHeightBump;
 
 		var termColor = this.props.termColor;
 
@@ -62924,11 +63001,26 @@ var TerminatorPiece = React.createClass({
 		if (orientation === -1) {
 			degreesOfRotation = 180;
 		}
-		var transform = "rotate(" + degreesOfRotation + " " + (endPointOnDna + startPointOnDNA) / 2 + " " + height + ")";
+		var resetRotation = degreesOfRotation + parentOrientation == 180 ? 180 : 0;
+		var xTextPosition = resetRotation == 0 ? (endPointOnDna + startPointOnDNA) / 2 : 0;
 
+		var yTextPosition = resetRotation == 0 ? 12 + staggerHeight : 0 - staggerHeight;
+		console.log("[TerminatorPiece:render] " + yTextPosition + " " + staggerHeight + " " + resetRotation);
+
+		var transform = "rotate(" + degreesOfRotation + " " + (endPointOnDna + startPointOnDNA) / 2 + " " + height + ")";
+		var pieceNameTransform = "rotate(" + resetRotation + " " + (endPointOnDna + startPointOnDNA) / 4 + ",0)";
 		return React.createElement(
 			'g',
 			{ transform: transform },
+			React.createElement(
+				'g',
+				{ transform: pieceNameTransform },
+				React.createElement(
+					'text',
+					{ fill: 'black', fontFamily: 'Hind, sans-serif', fontSize: '12', textAnchor: 'middle', x: xTextPosition, y: yTextPosition },
+					"Terminator"
+				)
+			),
 			React.createElement(
 				'svg',
 				{ viewBox: "0 0 50 100",
@@ -62954,42 +63046,48 @@ var Recombinases = {
 		recombinationSiteId: 1,
 		stroke: 'black',
 		strokeWidth: 1,
-		fill: '#66ccff'
+		fill: '#66ccff',
+		name: 'TP901'
 	},
 	//Blue
 	101: {
 		recombinationSiteId: 2,
 		stroke: 'black',
 		strokeWidth: 1,
-		fill: '#66ccff'
+		fill: '#66ccff',
+		name: 'TP901'
 	},
 	//Orange triangle
 	102: {
 		recombinationSiteId: 2,
 		stroke: 'black',
 		strokeWidth: 1,
-		fill: '#ff9900'
+		fill: '#ff9900',
+		name: 'BxbI'
 	},
 	//Orange oval
 	103: {
 		recombinationSiteId: 1,
 		stroke: 'black',
 		strokeWidth: 1,
-		fill: '#ff9900'
+		fill: '#ff9900',
+		name: 'BxbI'
 	},
 	//Purple triangle
 	104: {
 		recombinationSiteId: 2,
 		stroke: 'black',
 		strokeWidth: 1,
-		fill: 'rgb(148, 123, 209)'
+		fill: 'rgb(148, 123, 209)',
+		name: 'A118'
 	},
 	//Purple oval
 	105: {
 		recombinationSiteId: 1,
 		stroke: 'black',
 		strokeWidth: 1,
-		fill: 'rgb(148, 123, 209)'
+		fill: 'rgb(148, 123, 209)',
+		name: 'A118'
 	}
 };
 //An svg recombination site component
@@ -62998,6 +63096,7 @@ var RecombinationSite = React.createClass({
 	render: function render() {
 		var siteId = this.props.siteId;
 		var orientation = this.props.orientation;
+		var parentOrientation = this.props.parentOrientation;
 		var height = this.props.height;
 
 		var recombinaseInfo = Recombinases[siteId];
@@ -63005,6 +63104,9 @@ var RecombinationSite = React.createClass({
 		var stroke = recombinaseInfo['stroke'];
 		var strokeWidth = recombinaseInfo['strokeWidth'];
 		var fill = recombinaseInfo['fill'];
+		var title = recombinaseInfo['name'];
+
+		var isMainCircuit = this.props.isMainCircuit;
 
 		var startPointOnDNA = this.props.startPointOnDNA;
 		var endPointOnDna = this.props.endPointOnDna;
@@ -63017,6 +63119,13 @@ var RecombinationSite = React.createClass({
 		}
 		var transform = "rotate(" + degreesOfRotation + " " + midPoint + " " + height + ")";
 
+		var resetRotation = degreesOfRotation + parentOrientation == 180 ? 180 : 0;
+		var xTextPosition = resetRotation == 0 ? midPoint : 0;
+		var yTextPosition = resetRotation == 0 ? 12 : 0;
+		console.log("[TerminatorPiece:render] " + yTextPosition + " " + resetRotation);
+
+		var pieceNameTransform = "rotate(" + resetRotation + " " + midPoint / 2 + ",0)";
+
 		var shape = null;
 		switch (recombinationSiteId) {
 			//The oval
@@ -63026,11 +63135,34 @@ var RecombinationSite = React.createClass({
 				var point3 = { x: midPoint + 10, y: height };
 				var point4 = { x: midPoint - 5, y: height + 10 };
 				var path = "M" + point1.x + "," + point1.y + " L" + point2.x + "," + point2.y + " S" + point3.x + "," + point3.y + " " + point4.x + "," + point4.y + " z";
-				shape = React.createElement('path', {
-					d: path,
-					fill: fill, stroke: stroke, strokeWidth: strokeWidth,
-					transform: transform
-				});
+				if (isMainCircuit) {
+					shape = React.createElement(
+						'g',
+						{ transform: transform },
+						React.createElement('path', {
+							d: path,
+							fill: fill, stroke: stroke, strokeWidth: strokeWidth, transform: transform
+						}),
+						React.createElement(
+							'g',
+							{ transform: pieceNameTransform },
+							React.createElement(
+								'text',
+								{ fill: 'black', fontFamily: 'Hind, sans-serif', fontSize: '12', textAnchor: 'middle', x: xTextPosition, y: yTextPosition },
+								title
+							)
+						)
+					);
+				} else {
+					shape = React.createElement(
+						'g',
+						{ transform: transform },
+						React.createElement('path', {
+							d: path,
+							fill: fill, stroke: stroke, strokeWidth: strokeWidth, transform: transform
+						})
+					);
+				}
 				break;
 			//The triangle
 			case 2:
@@ -63049,11 +63181,28 @@ var RecombinationSite = React.createClass({
 					strokeWidth: strokeWidth,
 					stroke: stroke
 				};
-				shape = React.createElement(
-					'g',
-					{ stroke: stroke, transform: transform },
-					React.createElement('polygon', { points: points, style: recominaseStyle })
-				);
+				if (isMainCircuit) {
+					shape = React.createElement(
+						'g',
+						{ stroke: stroke, transform: transform },
+						React.createElement('polygon', { points: points, style: recominaseStyle }),
+						React.createElement(
+							'g',
+							{ transform: pieceNameTransform },
+							React.createElement(
+								'text',
+								{ strokeWidth: '0', fill: 'black', fontFamily: 'Hind, sans-serif', fontSize: '12', textAnchor: 'middle', x: xTextPosition, y: yTextPosition },
+								title
+							)
+						)
+					);
+				} else {
+					shape = React.createElement(
+						'g',
+						{ stroke: stroke, transform: transform },
+						React.createElement('polygon', { points: points, style: recominaseStyle })
+					);
+				}
 				break;
 			default:
 				break;
@@ -64381,6 +64530,18 @@ var App = React.createClass({
 			genes: genes
 		});
 	},
+
+	/*
+ * Changes the value of the newGeneName state variable
+ */
+	changeGeneName: function changeGeneName(newGeneName) {
+		this.setState({
+			newGeneName: newGeneName
+		}, function () {
+			console.log('main.js:changeGeneName - ' + this.state.newGeneName);
+			this.onUserEnter();
+		});
+	},
 	onUserChangeColor: function onUserChangeColor(geneId, color) {
 		var genes = this.state.genes;
 		var newGenesArray = [];
@@ -64398,18 +64559,6 @@ var App = React.createClass({
 		}
 		this.setState({
 			genes: newGenesArray
-		});
-	},
-
-	/*
- * Changes the value of the newGeneName state variable
- */
-	changeGeneName: function changeGeneName(newGeneName) {
-		this.setState({
-			newGeneName: newGeneName
-		}, function () {
-			console.log('main.js:changeGeneName - ' + this.state.newGeneName);
-			this.onUserEnter();
 		});
 	},
 

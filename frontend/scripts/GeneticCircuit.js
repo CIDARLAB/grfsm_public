@@ -58,10 +58,13 @@ const GeneticCircuit = React.createClass({
 
 		//Subtract 40 so its not tight at the borders
 		const width = this.props.pageWidth - 40;
+		const fittedTextWidth = this.props.pageWidth;
 
 		//Arbitrary y coordinate to start from
 		const maxCircuitHeight = 40;
 		const elementHeight = Math.min(maxCircuitHeight, height/2);
+
+		const isMainCircuit = this.props.isMainCircuit;
 
 		let currentPointOnDNA = 0;
 
@@ -76,7 +79,8 @@ const GeneticCircuit = React.createClass({
 		const interval = width/numberOfNon5s;
 
 		let partIdForKey = 1;
-
+		let lastCompID = 0;
+		let staggerHeight = 0;
 		/*
 		* Amount of padding depends on how many circuits are being displayed on the page.
 		* So we use this.props.paddingBottom to determine if there should be padding on the
@@ -106,7 +110,7 @@ const GeneticCircuit = React.createClass({
 		else {
 			return (
 				<div style={circuitExistsStyle}>
-					<svg width={width} height={height} id = {'genCirc'}>
+					<svg width={fittedTextWidth} height={height} id = {'genCirc'}>
 						<g stroke={'black'}>
 							<line
 								x1={0}
@@ -138,13 +142,29 @@ const GeneticCircuit = React.createClass({
 								geneInfo = geneMapping[partOriginalLocationId];
 							}
 							partIdForKey += 1;
+
+							// Blade: this code was trying to stagger circuit components that were next to each other,
+							// but the more that I played around with it, I don't think this was necessary...
+							// if( (lastCompID < 0 && componentId < 0) || (lastCompID > 0 && componentId > 0) )
+							// {
+							// 	staggerHeight = staggerHeight == 12 ? 0 : 12;
+							// }
+							// else
+							// {
+							// 	staggerHeight = 0;
+							// }
+
+							lastCompID = componentId;
+							console.log("[GeneticCircuit:render]: " + componentId);
 							return <IndividualPart
 								key={partIdForKey}
 								partId={componentId}
 								elementHeight={elementHeight}
+								textHeightBump={staggerHeight}
 								startPointOnDNA={currentPointOnDNA - interval}
 								endPointOnDna={currentPointOnDNA}
 								geneInfo={geneInfo}
+								isMainCircuit={isMainCircuit}
 								getGeneInformation={this.getGeneInformation}
 								linePosition = {elementHeight}
 							/>;
@@ -201,6 +221,7 @@ const IndividualPart = React.createClass({
 	render() {
 		const partId = Math.abs(this.props.partId);
 		const components = partIdToComponents[partId];
+		console.log("[IndividualPart:render]: " + partId + " " + components);
 		const elementHeight = this.props.elementHeight;
 
 		const geneInfo = this.props.geneInfo;
@@ -209,8 +230,11 @@ const IndividualPart = React.createClass({
 		const endPointOnDna = this.props.endPointOnDna;
 		let currentPointOnDNA = startPointOnDNA;
 		let componentId = 0;
+		let staggerHeight = this.props.textHeightBump;
+		let prevOrientation = [0];
 
 		const linePosition = this.props.linePosition;
+		const isMainCircuit = this.props.isMainCircuit;
 
 		let degreesOfRotation = 0;
 		if (this.props.partId < 0) {
@@ -230,6 +254,7 @@ const IndividualPart = React.createClass({
 				currentPointOnDNA += interval;
 				let pieceToShow = null;
 				let orientation = 1;
+
 				//Some parts have multiple genes and we need to know which gene for a part we are creating
 				//Move where we start from up by interval, since each component
 				//has the same width
@@ -240,6 +265,8 @@ const IndividualPart = React.createClass({
 							siteId={partId}
 							stroke={'black'}
 							orientation={orientation}
+							parentOrientation={degreesOfRotation}
+							isMainCircuit={isMainCircuit}
 							strokeWidth={1}
 							fill={'black'}
 							height={elementHeight}
@@ -250,10 +277,22 @@ const IndividualPart = React.createClass({
 					case '-P':
 						orientation *= -1
 						case 'P':
+						if(prevOrientation.length > 0) {
+							let iterator = 0;
+							for (let i = prevOrientation.length; i > 0; i--) { 
+							    if(prevOrientation[i] == orientation) 
+							    	iterator++;
+							}
+							staggerHeight = iterator % 2 == 0 ? (staggerHeight + 0) : (staggerHeight + 12);
+						}
+						else
+							staggerHeight = staggerHeight == 12 ? 0 : 12;
 						pieceToShow = <PromoterPiece
 							key={componentId}
 							orientation={orientation}
+							parentOrientation={degreesOfRotation}
 							height={elementHeight}
+							textHeightBump={staggerHeight}
 							strokeWidth = {3}
 							startPointOnDNA={currentPointOnDNA - interval}
 							endPointOnDna={currentPointOnDNA}
@@ -269,14 +308,17 @@ const IndividualPart = React.createClass({
 						const geneIdToAdd = geneInfo[geneNumber];
 						const individualGeneInfo = this.getGeneInformation(geneIdToAdd);
 						const fillColor = individualGeneInfo['color'];
+						const geneName = individualGeneInfo['geneName'];
 						pieceToShow = <GenePiece
 							key={componentId}
 							orientation={orientation}
+							parentOrientation={degreesOfRotation}
 							height={elementHeight}
 							startPointOnDNA={currentPointOnDNA - interval}
 							endPointOnDna={currentPointOnDNA}
 							linePosition = {linePosition}
 							fill = {fillColor}
+							title = {geneName}
 							stroke = {'black'}
 							strokeWidth = {5}
 						/>
@@ -285,10 +327,22 @@ const IndividualPart = React.createClass({
 					case '-T':
 						orientation *= -1;
 					case 'T':
+						if(prevOrientation.length > 0) {
+							let iterator = 0;
+							for (let i = prevOrientation.length; i > 0; i--) { 
+							    if(prevOrientation[i] == orientation) 
+							    	iterator++;
+							}
+							staggerHeight = iterator % 2 == 0 ? (staggerHeight + 0) : (staggerHeight + 12);
+						}
+						else
+							staggerHeight = staggerHeight == 12 ? 0 : 12;
 						pieceToShow = <TerminatorPiece
 							key={componentId}
 							orientation={orientation}
+							parentOrientation={degreesOfRotation}
 							height={elementHeight}
+							textHeightBump={staggerHeight}
 							startPointOnDNA={currentPointOnDNA - interval}
 							endPointOnDna={currentPointOnDNA}
 							linePosition = {linePosition}
@@ -299,10 +353,22 @@ const IndividualPart = React.createClass({
 					case '-t':
 						orientation *= -1;
 					case 't':
+						if(prevOrientation.length > 0) {
+							let iterator = 0;
+							for (let i = prevOrientation.length; i > 0; i--) { 
+							    if(prevOrientation[i] == orientation) 
+							    	iterator++;
+							}
+							staggerHeight = iterator % 2 == 0 ? (staggerHeight + 0) : (staggerHeight + 12);
+						}
+						else
+							staggerHeight = staggerHeight == 12 ? 0 : 12;
 						pieceToShow = <TerminatorPiece
 							key={componentId}
 							orientation={orientation}
+							parentOrientation={degreesOfRotation}
 							height={elementHeight}
+							textHeightBump={staggerHeight}
 							startPointOnDNA={currentPointOnDNA - interval}
 							endPointOnDna={currentPointOnDNA}
 							linePosition = {linePosition}
@@ -314,6 +380,8 @@ const IndividualPart = React.createClass({
 						break;
 				}
 				componentId += 1;
+				prevOrientation.push(orientation);
+				console.log("[GeneticCircuit:IndividualPart:Render()] " + prevOrientation);
 				return pieceToShow;
 			})}
 			</g>
@@ -325,6 +393,7 @@ const IndividualPart = React.createClass({
 const PromoterPiece = React.createClass({
 	render() {
 		const orientation = this.props.orientation;
+		const parentOrientation = this.props.parentOrientation;
 		const height = this.props.height;
 		const strokeWidth = this.props.strokeWidth;
 
@@ -332,16 +401,26 @@ const PromoterPiece = React.createClass({
 		const endPointOnDna = this.props.endPointOnDna;
 
 		const linePosition = this.props.linePosition;
-
+		const staggerHeight = this.props.textHeightBump;
 
 		let degreesOfRotation = 0;
 		if (orientation === -1) {
 			degreesOfRotation = 180;
 		}
-		const transform = "rotate("+degreesOfRotation+" "+(endPointOnDna+startPointOnDNA)/2+" "+height+")";
 
+		let resetRotation = degreesOfRotation + parentOrientation == 180 ? 180 : 0;
+		let xTextPosition = resetRotation == 0 ? (endPointOnDna+startPointOnDNA)/2 : 0;
+
+		let yTextPosition = resetRotation == 0 ? (12 + staggerHeight) : (0 - staggerHeight);
+		console.log("[PromoterPiece:render] " + yTextPosition + " " + staggerHeight + " " + resetRotation);
+
+		const transform = "rotate("+degreesOfRotation+" "+(endPointOnDna+startPointOnDNA)/2+" "+height+")";
+		const pieceNameTransform = "rotate("+resetRotation+" "+(endPointOnDna+startPointOnDNA)/4+",0)";
 		return(
 			<g transform={transform}>
+				<g transform={pieceNameTransform}>
+					<text fill="black" fontFamily="Hind, sans-serif" fontSize="12" textAnchor="middle" x={xTextPosition} y={yTextPosition}>{"Promoter"}</text>
+				</g>
 				<image
 					xlinkHref = {"./img/SBOL/promoter.svg"}
 					height = {height}
@@ -356,10 +435,18 @@ const PromoterPiece = React.createClass({
 	}
 });
 
+const geneNameStyle = {
+	textStyle: {
+		fontSize: 20,
+		fontFamily: 'Open Sans, sans-serif',
+	},
+};
+
 //An svg gene component
 const GenePiece = React.createClass({
 	render() {
 		const orientation = this.props.orientation;
+		const parentOrientation = this.props.parentOrientation;
 		const height = this.props.height;
 
 		const startPointOnDNA = this.props.startPointOnDNA;
@@ -368,6 +455,7 @@ const GenePiece = React.createClass({
 		const linePosition = this.props.linePosition;
 
 		const fill = this.props.fill;
+		const title = this.props.title;
 
 		const strokeWidth = this.props.strokeWidth;
 		const stroke = this.props.stroke;
@@ -376,9 +464,18 @@ const GenePiece = React.createClass({
 		if (orientation === -1) {
 			degreesOfRotation = 180;
 		}
+
+		let resetRotation = degreesOfRotation + parentOrientation == 180 ? 180 : 0;
+		let xTextPosition = resetRotation == 0 ? (endPointOnDna+startPointOnDNA)/2 : 0;
+		let yTextPosition = resetRotation == 0 ? 12 : 0;
+
 		const transform = "rotate("+degreesOfRotation+" "+(endPointOnDna+startPointOnDNA)/2+" "+height+")";
+		const pieceNameTransform = "rotate("+resetRotation+" "+(endPointOnDna+startPointOnDNA)/4+",0)";
 		return(
 			<g transform={transform}>
+				<g transform={pieceNameTransform}>
+					<text fill="black" fontFamily="Hind, sans-serif" fontSize="12" textAnchor="middle" x={xTextPosition} y={yTextPosition}>{title}</text>
+				</g>
 				<svg viewBox={"0 0 50 100"}
 					version={"1.1"} xmlns={'http://www.w3.org/2000/svg'} xmlnsXlink= {'http://www.w3.org/1999/xlink'}
 					xmlSpace={"preserve"}
@@ -400,12 +497,14 @@ const GenePiece = React.createClass({
 const TerminatorPiece = React.createClass({
 	render() {
 		const orientation = this.props.orientation;
+		const parentOrientation = this.props.parentOrientation;
 		const height = this.props.height;
 
 		const startPointOnDNA = this.props.startPointOnDNA;
 		const endPointOnDna = this.props.endPointOnDna;
 
 		const linePosition = this.props.linePosition;
+		const staggerHeight = this.props.textHeightBump;
 
 		const termColor = this.props.termColor;
 
@@ -415,23 +514,32 @@ const TerminatorPiece = React.createClass({
 		if (orientation === -1) {
 			degreesOfRotation = 180;
 		}
-		const transform = "rotate("+degreesOfRotation+" "+(endPointOnDna+startPointOnDNA)/2+" "+height+")";
+		let resetRotation = degreesOfRotation + parentOrientation == 180 ? 180 : 0;
+		let xTextPosition = resetRotation == 0 ? (endPointOnDna+startPointOnDNA)/2 : 0;
 
+		let yTextPosition = resetRotation == 0 ? (12 + staggerHeight) : (0 - staggerHeight);
+		console.log("[TerminatorPiece:render] " + yTextPosition + " " + staggerHeight + " " + resetRotation);
+
+		const transform = "rotate("+degreesOfRotation+" "+(endPointOnDna+startPointOnDNA)/2+" "+height+")";
+		const pieceNameTransform = "rotate("+resetRotation+" "+(endPointOnDna+startPointOnDNA)/4+",0)";
 		return(
 			<g transform={transform}>
-			<svg viewBox={"0 0 50 100"}
-				version={"1.1"} xmlns={'http://www.w3.org/2000/svg'} xmlnsXlink= {'http://www.w3.org/1999/xlink'}
-				xmlSpace={"preserve"}
-				x= {startPointOnDNA}
-				y= {linePosition - 20}
-				width={endPointOnDna - startPointOnDNA}
-				height={height}
-				stroke = {termColor}
-				strokeWidth = {strokeWidth}
-				fill = {termColor} >
-  			<path d="M 25 50 L 25 26"/>
-  			<path d="M 10 25 L 40 25"/>
-			</svg>
+				<g transform={pieceNameTransform}>
+					<text fill="black" fontFamily="Hind, sans-serif" fontSize="12" textAnchor="middle" x={xTextPosition} y={yTextPosition}>{"Terminator"}</text>
+				</g>
+				<svg viewBox={"0 0 50 100"}
+					version={"1.1"} xmlns={'http://www.w3.org/2000/svg'} xmlnsXlink= {'http://www.w3.org/1999/xlink'}
+					xmlSpace={"preserve"}
+					x= {startPointOnDNA}
+					y= {linePosition - 20}
+					width={endPointOnDna - startPointOnDNA}
+					height={height}
+					stroke = {termColor}
+					strokeWidth = {strokeWidth}
+					fill = {termColor} >
+	  			<path d="M 25 50 L 25 26"/>
+	  			<path d="M 10 25 L 40 25"/>
+				</svg>
 			</g>
 		);
 	}
@@ -444,6 +552,7 @@ const Recombinases = {
 		stroke: 'black',
 		strokeWidth: 1,
 		fill: '#66ccff',
+		name: 'TP901'
 	},
 	//Blue
 	101: {
@@ -451,6 +560,7 @@ const Recombinases = {
 		stroke: 'black',
 		strokeWidth: 1,
 		fill: '#66ccff',
+		name: 'TP901'
 	},
 	//Orange triangle
 	102: {
@@ -458,6 +568,7 @@ const Recombinases = {
 		stroke: 'black',
 		strokeWidth: 1,
 		fill: '#ff9900',
+		name: 'BxbI'
 	},
 	//Orange oval
 	103: {
@@ -465,6 +576,7 @@ const Recombinases = {
 		stroke: 'black',
 		strokeWidth: 1,
 		fill: '#ff9900',
+		name: 'BxbI'
 	},
 	//Purple triangle
 	104: {
@@ -472,6 +584,7 @@ const Recombinases = {
 		stroke: 'black',
 		strokeWidth: 1,
 		fill: 'rgb(148, 123, 209)',
+		name: 'A118'
 	},
 	//Purple oval
 	105: {
@@ -479,6 +592,7 @@ const Recombinases = {
 		stroke: 'black',
 		strokeWidth: 1,
 		fill: 'rgb(148, 123, 209)',
+		name: 'A118'
 	},
 };
 //An svg recombination site component
@@ -486,6 +600,7 @@ const RecombinationSite = React.createClass({
 	render() {
 		const siteId = this.props.siteId;
 		const orientation = this.props.orientation;
+		const parentOrientation = this.props.parentOrientation;
 		const height = this.props.height;
 
 		const recombinaseInfo = Recombinases[siteId];
@@ -493,6 +608,9 @@ const RecombinationSite = React.createClass({
 		const stroke = recombinaseInfo['stroke'];
 		const strokeWidth = recombinaseInfo['strokeWidth'];
 		const fill = recombinaseInfo['fill'];
+		const title = recombinaseInfo['name'];
+
+		const isMainCircuit = this.props.isMainCircuit;
 
 		const startPointOnDNA = this.props.startPointOnDNA;
 		const endPointOnDna = this.props.endPointOnDna;
@@ -505,6 +623,13 @@ const RecombinationSite = React.createClass({
 		}
 		const transform = "rotate("+degreesOfRotation+" "+midPoint+" "+height+")";
 
+		const resetRotation = degreesOfRotation + parentOrientation == 180 ? 180 : 0;
+		const xTextPosition = resetRotation == 0 ? midPoint : 0;
+		const yTextPosition = resetRotation == 0 ? 12 : 0;
+		console.log("[TerminatorPiece:render] " + yTextPosition + " " + resetRotation);
+
+		const pieceNameTransform = "rotate("+resetRotation+" "+midPoint/2+",0)";
+
 		let shape = null;
 		switch(recombinationSiteId) {
 			//The oval
@@ -514,11 +639,27 @@ const RecombinationSite = React.createClass({
 				const point3 = {x: midPoint+10, y: height};
 				const point4 = {x: midPoint-5, y: height+10};
 				const path = "M"+point1.x+","+point1.y+" L"+point2.x+","+point2.y+" S"+point3.x+","+point3.y+" "+point4.x+","+point4.y+" z";
-				shape = <path
-					d={path}
-					fill={fill} stroke={stroke} strokeWidth={strokeWidth}
-					transform={transform}
-				/>;
+				if(isMainCircuit)
+				{
+					shape = <g transform={transform}>
+						<path
+							d={path}
+							fill={fill} stroke={stroke} strokeWidth={strokeWidth} transform={transform}
+						/>
+						<g transform={pieceNameTransform}>
+							<text fill="black" fontFamily="Hind, sans-serif" fontSize="12" textAnchor="middle" x={xTextPosition} y={yTextPosition}>{title}</text>
+						</g>
+					</g>;
+				}
+				else
+				{
+					shape = <g transform={transform}>
+						<path
+							d={path}
+							fill={fill} stroke={stroke} strokeWidth={strokeWidth} transform={transform}
+						/>
+					</g>;
+				}
 				break;
 			//The triangle
 			case 2:
@@ -537,9 +678,21 @@ const RecombinationSite = React.createClass({
 					strokeWidth: strokeWidth,
 					stroke: stroke,
 				};
-				shape = <g stroke={stroke} transform={transform}>
-					<polygon points={points} style={recominaseStyle} />
-				</g>;
+				if(isMainCircuit)
+				{
+					shape = <g stroke={stroke} transform={transform}>
+						<polygon points={points} style={recominaseStyle} />
+						<g transform={pieceNameTransform}>
+							<text strokeWidth="0" fill="black" fontFamily="Hind, sans-serif" fontSize="12" textAnchor="middle" x={xTextPosition} y={yTextPosition}>{title}</text>
+						</g>
+					</g>;
+				}
+				else
+				{
+					shape = <g stroke={stroke} transform={transform}>
+						<polygon points={points} style={recominaseStyle} />
+					</g>;
+				}
 				break;
 			default:
 				break;
