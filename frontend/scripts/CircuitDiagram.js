@@ -13,6 +13,7 @@ var DiagramIllustration = require('./DiagramIllustration');
 var DiagramIllustration3Input = require('./DiagramIllustration3Input');
 var PrintPreview = require('./PrintPreview');
 import * as constants from './constants';
+import * as File from './GenerateFile';
 
 /*
 * The page the contains the display for the circuit diagram. Has its own navigation bar
@@ -300,7 +301,7 @@ const CircuitDiagram = React.createClass({
 						break;
 					case '-P':
 					case 'P':
-						partNameList.push("promoter");
+						partNameList.push("proD");
 						break;
 					case '-G':
 					case 'G':
@@ -326,7 +327,8 @@ const CircuitDiagram = React.createClass({
 		})
 		console.log("[CircuitDiagram:clickedDownload()] " + partNameList);
 		if(partNameList.length > 0) {
-			window.location.href="data:application/octet-stream;charset=utf-8;base10," + partNameList;
+			console.log("[CircuitDiagram:clickedDownload()] " + File.GenerateFile(partNameList));
+			window.location.href="data:application/octet-stream;charset=utf-8;base10," + File.GenerateFile(partNameList);
 		}
 		
 	},
