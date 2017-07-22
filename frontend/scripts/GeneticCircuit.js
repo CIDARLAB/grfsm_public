@@ -4,30 +4,7 @@ var React = require('react');
 var ReactDOM = require('react-dom');
 var D3 = require('d3');
 var $ = require('jQuery');
-
-/*
-* Maps the recombinant elements to their ids
-*/
-const recombinaseToId = {
-	'D': 100,
-	'-D': -100,
-	'[': 101,
-	'-[': -101,
-	'(': 102,
-	'-(': -102,
-	'F': 100,
-	'-F': -100,
-	'O': 101,
-	'-O': -101,
-	'X': 103,
-	'-X': -103,
-	'I': 102,
-	'-I': -102,
-	'A': 105,
-	'-A': -105,
-	'B': 104,
-	'-B': -104,
-};
+import * as constants from './constants';
 
 const geneticCircuitStyles = {
 	emptyDivStyle: {
@@ -120,12 +97,13 @@ const GeneticCircuit = React.createClass({
 								strokeWidth={3}
 							/>
 						</g>
+
 						{circuitArray.map((component) => {
 							//These are just numbers
 							let componentId = component;
 							//Check if we are adding a recombinase
 							if (typeof component === 'string') {
-								componentId = recombinaseToId[component];
+								componentId = constants.recombinaseToId[component];
 							}
 							//Skip '5' because it is an empty piece of DNA
 							if (Math.abs(component) !== 5) {
@@ -153,8 +131,8 @@ const GeneticCircuit = React.createClass({
 							// {
 							// 	staggerHeight = 0;
 							// }
+							// lastCompID = componentId;
 
-							lastCompID = componentId;
 							console.log("[GeneticCircuit:render]: " + componentId);
 							return <IndividualPart
 								key={partIdForKey}
@@ -175,44 +153,6 @@ const GeneticCircuit = React.createClass({
 		}
 	}
 });
-const partIdToComponents = {
-	orientationByLetter: {
-		top: new Set(['P','G','T','t']),
-		bottom: new Set(['-P','-G','-T','-t']),
-	},
-	1: ['G'],
-	2: ['G','P'],
-	3: ['t','-T','P'],
-	4: ['-T','T'],
-	5: [],
-	6: ['-P','P'],
-	7: ['T'],
-	8: ['G','-G'],
-	9: ['-G','P'],
-	10: ['P'],
-	11: ['-P','G','P'],
-	12: ['G','-G','P'],
-	13: ['-P','G','-G','P'],
-	14: ['-t','P'],
-	15: ['T','-t'],
-	16: ['G','P','G'],
-	17: ['G','P','G','P'],
-	18: ['P','G','P'],
-	19: ['P','G'],
-	20: ['-P','P','G','P'],
-	21: ['G','P','G','-G'],
-	22: ['P','G','-G','P'],
-	23: ['-P','G','P','G','P'],
-	24: ['G','P','G','-G','P'],
-	25: ['-P','G','P','G','-G','P'],
-	//Recombinases
-	100: ['R'],
-	101: ['R'],
-	102: ['R'],
-	103: ['R'],
-	104: ['R'],
-	105: ['R'],
-};
 
 const IndividualPart = React.createClass({
 	getGeneInformation(id) {
@@ -220,7 +160,7 @@ const IndividualPart = React.createClass({
 	},
 	render() {
 		const partId = Math.abs(this.props.partId);
-		const components = partIdToComponents[partId];
+		const components = constants.partIdToComponents[partId];
 		console.log("[IndividualPart:render]: " + partId + " " + components);
 		const elementHeight = this.props.elementHeight;
 
@@ -381,7 +321,7 @@ const IndividualPart = React.createClass({
 				}
 				componentId += 1;
 				prevOrientation.push(orientation);
-				console.log("[GeneticCircuit:IndividualPart:Render()] " + prevOrientation);
+				// console.log("[GeneticCircuit:IndividualPart:Render()] " + prevOrientation);
 				return pieceToShow;
 			})}
 			</g>
@@ -545,56 +485,6 @@ const TerminatorPiece = React.createClass({
 	}
 });
 
-const Recombinases = {
-	//Blue
-	100: {
-		recombinationSiteId: 1,
-		stroke: 'black',
-		strokeWidth: 1,
-		fill: '#66ccff',
-		name: 'TP901'
-	},
-	//Blue
-	101: {
-		recombinationSiteId: 2,
-		stroke: 'black',
-		strokeWidth: 1,
-		fill: '#66ccff',
-		name: 'TP901'
-	},
-	//Orange triangle
-	102: {
-		recombinationSiteId: 2,
-		stroke: 'black',
-		strokeWidth: 1,
-		fill: '#ff9900',
-		name: 'BxbI'
-	},
-	//Orange oval
-	103: {
-		recombinationSiteId: 1,
-		stroke: 'black',
-		strokeWidth: 1,
-		fill: '#ff9900',
-		name: 'BxbI'
-	},
-	//Purple triangle
-	104: {
-		recombinationSiteId: 2,
-		stroke: 'black',
-		strokeWidth: 1,
-		fill: 'rgb(148, 123, 209)',
-		name: 'A118'
-	},
-	//Purple oval
-	105: {
-		recombinationSiteId: 1,
-		stroke: 'black',
-		strokeWidth: 1,
-		fill: 'rgb(148, 123, 209)',
-		name: 'A118'
-	},
-};
 //An svg recombination site component
 const RecombinationSite = React.createClass({
 	render() {
@@ -603,7 +493,7 @@ const RecombinationSite = React.createClass({
 		const parentOrientation = this.props.parentOrientation;
 		const height = this.props.height;
 
-		const recombinaseInfo = Recombinases[siteId];
+		const recombinaseInfo = constants.Recombinases[siteId];
 		const recombinationSiteId = recombinaseInfo['recombinationSiteId'];
 		const stroke = recombinaseInfo['stroke'];
 		const strokeWidth = recombinaseInfo['strokeWidth'];

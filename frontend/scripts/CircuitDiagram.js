@@ -12,11 +12,13 @@ var GeneticCircuit = require('./GeneticCircuit');
 var DiagramIllustration = require('./DiagramIllustration');
 var DiagramIllustration3Input = require('./DiagramIllustration3Input');
 var PrintPreview = require('./PrintPreview');
+import * as constants from './constants';
 
 /*
 * The page the contains the display for the circuit diagram. Has its own navigation bar
 * and uses the GeneticCircuit component to display the circuits
 */
+
 const CircuitDiagram = React.createClass({
 	/*
 	* In the state for this page we have:
@@ -50,6 +52,7 @@ const CircuitDiagram = React.createClass({
 			pdfSettings: {
 				display: 'none',
 			},
+			partNameArray: []
 		};
 	},
 	/*
@@ -200,6 +203,132 @@ const CircuitDiagram = React.createClass({
 				display: 'none',
 			}
 		});
+	},
+
+	setPartNameList(nameArray){
+		this.setState({
+			partNameArray: nameArray
+		});
+	},
+
+	clickedDownload(){
+		console.log("[CircuitDiagram:clickedDownload()]");
+
+		const data = this.state.data;
+		const circuitToShow = this.state.circuitToShow;
+
+		let numberOfCircuits = 0;
+
+		let circuitArray = [];
+		let allCircuits = [[], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []];
+
+		let geneIdToPartMapping = [];
+		let circuitsPartMapping = [];
+
+		let noCircuitsWereFound = false;
+		if (data.length !== 0) {
+			numberOfCircuits = this.state.data[0].length;
+			//Check for errors
+			if (data[0][0] === 'Gene regulation program does not exist' || data[0][0] === 'No registers found' || data[0][0] === 'Design does not exist') {
+				// console.log('No circuit was found');
+				noCircuitsWereFound = true;
+			}
+			else {
+				// Access by using state as index ... note that index 0 is just a filler (contents = same as index 1)
+				allCircuits = [
+				data[0][circuitToShow][0][0], data[0][circuitToShow][0][0], data[0][circuitToShow][0][1],
+				data[0][circuitToShow][0][2], data[0][circuitToShow][0][3],
+				data[0][circuitToShow][0][4], data[0][circuitToShow][0][5],
+				data[0][circuitToShow][0][6], data[0][circuitToShow][0][7], data[0][circuitToShow][0][8],
+				data[0][circuitToShow][0][9],data[0][circuitToShow][0][10],
+				data[0][circuitToShow][0][11],data[0][circuitToShow][0][12],
+				data[0][circuitToShow][0][13],data[0][circuitToShow][0][14], data[0][circuitToShow][0][15],
+			];
+			circuitArray = allCircuits[1];
+			geneIdToPartMapping = data[0][circuitToShow][1];
+			circuitsPartMapping = data[1];
+		}
+		}
+
+		let geneMapping = {};
+		if (geneIdToPartMapping.length !== 0) {
+			for (let geneMap in geneIdToPartMapping) {
+				const splitPartGene = geneMap.split('.');
+				//Part id is stored at the second position, the gene position in that part is stored in the third position
+				const partID = splitPartGene[1];
+				const genePosition = splitPartGene[2];
+
+				if (geneMapping[partID] === undefined) {
+					geneMapping[partID] = {};
+				}
+				geneMapping[partID][genePosition] = geneIdToPartMapping[geneMap];
+			};
+		}
+
+
+
+		let partNameList = [];
+		let partIdForKey = 1;
+
+		circuitsPartMapping = circuitsPartMapping[0];
+
+		circuitArray.map((component) => {
+			let componentId = component;
+
+			if (typeof component === 'string') {
+				componentId = constants.recombinaseToId[component];
+			}
+
+			let geneInfo = undefined;
+
+			const partOriginalLocationId = circuitsPartMapping[partIdForKey-1]
+			if (geneMapping[partOriginalLocationId]) {
+				geneInfo = geneMapping[partOriginalLocationId];
+			}
+			partIdForKey += 1;
+
+			componentId = Math.abs(componentId);
+			console.log("[GeneticCircuit:componentDidUpdate()] " + componentId);
+			const components = constants.partIdToComponents[componentId];
+			console.log("[GeneticCircuit:componentDidUpdate()] " + components);
+			let geneNumber = 1;
+
+			components.map((component) => {
+				switch(component) {
+					case 'R':
+						partNameList.push(constants.Recombinases[componentId].name);
+						break;
+					case '-P':
+					case 'P':
+						partNameList.push("promoter");
+						break;
+					case '-G':
+					case 'G':
+						const geneIdToAdd = geneInfo[geneNumber];
+						const individualGeneInfo = this.getGeneInformation(geneIdToAdd);
+						const geneName = individualGeneInfo['geneName'];
+						partNameList.push(geneName);
+						geneNumber += 1;
+						break;
+					case '-T':
+					case 'T':
+						partNameList.push("terminator_black");
+						break;
+					case '-t':
+					case 't':
+						partNameList.push("terminator_red");
+						break;
+					default:
+						break;
+				}
+				componentId += 1;
+			})
+		})
+		console.log("[CircuitDiagram:clickedDownload()] " + partNameList);
+		if(partNameList.length > 0) {
+			window.location.href="data:application/octet-stream;charset=utf-8;base10," + partNameList;
+		}
+		
 	},
 
 	/*
@@ -367,6 +496,7 @@ const CircuitDiagram = React.createClass({
 					numberOfCircuits={numberOfCircuits}
 					noCircuitsWereFound={noCircuitsWereFound}
 					clickedPDF = {this.clickedPDF}
+					clickedDownload = {this.clickedDownload}
 				/>
 				<GeneticCircuit
 					pageWidth={pageWidth}
@@ -723,7 +853,12 @@ const CircuitDiagramNavBar = React.createClass({
 	clickedPDF() {
 		this.props.clickedPDF();
 	},
-	
+
+	clickedDownload(){
+		this.props.clickedDownload();
+		// window.location.href='data:application/octet-stream;charset=utf-8;base64,Zm9vIGJhcg=='; 
+	},
+
 	render() {
 		const pageTitle = this.props.pageTitle;
 		const pageWidth = this.props.pageWidth;
@@ -877,9 +1012,13 @@ const CircuitDiagramNavBar = React.createClass({
 								</svg>
 							</div>
 							<input
+								type = {'button'} value = {'Download .gb File'}
+								onClick = {this.clickedDownload} style = {printButtonStyle}
+								onMouseEnter = {this.onMouseEnterPrint} height="31" onMouseLeave = {this.onMouseEnterPrint}/>
+							<input
 								type = {'button'} value = {'Print Preview'}
 								onClick = {this.clickedPDF} style = {printButtonStyle}
-								onMouseEnter = {this.onMouseEnterPrint} onMouseLeave = {this.onMouseEnterPrint}/>
+								onMouseEnter = {this.onMouseEnterPrint} height="31" onMouseLeave = {this.onMouseEnterPrint}/>
 							<div style={bufferStyle}></div>
 						</div>
 		}
