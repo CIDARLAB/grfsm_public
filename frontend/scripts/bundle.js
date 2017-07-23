@@ -59502,14 +59502,14 @@ var AddGenePage = React.createClass({
 	},
 	onUserEnter: function onUserEnter() {
 		this.setState({ numGenes: this.state.numGenes + 1 }, function () {
-			console.log("AddGenePage.js:onUserEnter - " + newGeneName);
+			// console.log("AddGenePage.js:onUserEnter - " + newGeneName);
 			this.props.changeGeneName(newGeneName);
 			this.props.changeGeneCount(1);
 		});
 	},
 	changeGeneName: function changeGeneName(newGeneName) {
 		this.setState({ numGenes: this.state.numGenes + 1 }, function () {
-			console.log("AddGenePage.js:onUserEnter - " + newGeneName);
+			// console.log("AddGenePage.js:onUserEnter - " + newGeneName);
 			this.props.changeGeneName(newGeneName);
 			this.props.changeGeneCount(1);
 		});
@@ -59758,7 +59758,7 @@ var AddNameInput = React.createClass({
 		this.setState({ hover: false });
 	},
 	onUserEnter: function onUserEnter(value) {
-		console.log(value.label);
+		// console.log(value.label);
 
 		this.props.changeGeneName(value.label);
 		this.setState({ selectedGene: value });
@@ -62870,12 +62870,19 @@ var writeFile = function writeFile(nameList, partList) {
 	nameList.map(function (name) {
 		if (name.title in hardCodedParts) {
 			var correctedSequence = hardCodedParts[name.title].toLowerCase();
-			if (name.flip) {
-				correctedSequence = reverseAndComplement(correctedSequence);
-			}
+			// if(name.flip)
+			// {
+			// 	correctedSequence = reverseAndComplement(correctedSequence);
+			// }
 			fullSequence += correctedSequence;
 			textFile += addNewLine(1);
-			textFile += addSpace(5) + name.feature + addSpace(24 - name.feature.toString().length) + currentBPNum + ".." + (currentBPNum + hardCodedParts[name.title].length - 1);
+			textFile += addSpace(5) + name.feature + addSpace(24 - name.feature.toString().length);
+			if (name.flip) {
+				// textFile += "complement(" + (currentBPNum + correctedSequence.length - 1) + ".." + currentBPNum + ")";
+				textFile += "complement(" + currentBPNum + ".." + (currentBPNum + correctedSequence.length - 1) + ")";
+			} else {
+				textFile += currentBPNum + ".." + (currentBPNum + correctedSequence.length - 1);
+			}
 			currentBPNum += hardCodedParts[name.title].length;
 			textFile += addNewLine(1);
 			textFile += addSpace(29) + "/label=\"" + name.title + "\"";
@@ -62892,13 +62899,20 @@ var writeFile = function writeFile(nameList, partList) {
 			}
 			var reducedString = partList[indexNum].sequence.replace(/\n/ig, '');
 			var _correctedSequence = reducedString.toLowerCase();
-			if (name.flip) {
-				_correctedSequence = reverseAndComplement(_correctedSequence);
-			}
+			// if(name.flip)
+			// {
+			// 	correctedSequence = reverseAndComplement(correctedSequence);
+			// }
 			fullSequence += _correctedSequence;
 			textFile += addNewLine(1);
-			textFile += addSpace(5) + name.feature + addSpace(24 - name.feature.toString().length) + currentBPNum + ".." + (currentBPNum + partList[indexNum].sequence.length - 1);
-			currentBPNum += partList[indexNum].sequence.length;
+			textFile += addSpace(5) + name.feature + addSpace(24 - name.feature.toString().length);
+			if (name.flip) {
+				// textFile += "complement(" + (currentBPNum + correctedSequence.length - 1) + ".." + currentBPNum + ")";
+				textFile += "complement(" + currentBPNum + ".." + (currentBPNum + _correctedSequence.length - 1) + ")";
+			} else {
+				textFile += currentBPNum + ".." + (currentBPNum + _correctedSequence.length - 1);
+			}
+			currentBPNum += _correctedSequence.length;
 			textFile += addNewLine(1);
 			textFile += addSpace(29) + "/label=\"" + name.title + "\"";
 		}
@@ -62932,7 +62946,7 @@ var getGeneList = function getGeneList(nameList, callback) {
 			return resp.text();
 		});
 	})).then(function (data) {
-		console.log(data);
+		// console.log(data);
 		var tempURIs = [];
 
 		var _loop = function _loop(x) {
@@ -62944,7 +62958,7 @@ var getGeneList = function getGeneList(nameList, callback) {
 					tempURIs[x].title = value;
 				}
 			});
-			console.log(tempURIs[x]);
+			// console.log(tempURIs[x]);
 		};
 
 		for (var x = 0; x < data.length; x++) {
@@ -62959,12 +62973,12 @@ var getGeneList = function getGeneList(nameList, callback) {
 				return resp.text();
 			});
 		})).then(function (seqData) {
-			console.log(seqData);
+			// console.log(seqData);
 			for (var j = 0; j < seqData.length; j++) {
 				var startChar = seqData[j].indexOf("\n");
 				var endChar = seqData[j].indexOf(" ");
 				sequenceList.push({ title: seqData[j].substr(1, endChar - 1), sequence: seqData[j].substr(startChar + 1, seqData[j].length - 1) });
-				console.log(sequenceList);
+				// console.log(sequenceList);
 			}
 			callback(nameList, sequenceList);
 		});
@@ -62983,12 +62997,18 @@ function generateSequence(fullSequence) {
 				text += addSpace(8);
 			} else if (i == segmentsPerLine) {
 				text += addSpace(7);
+			} else if (i >= 17 * segmentsPerLine) {
+				text += addSpace(5);
 			} else {
 				text += addSpace(6);
 			}
 			text += "" + (i * segmentLength + 1);
 		}
-		text += addSpace(1) + fullSequence.substring(i * segmentLength, Math.min(fullSequence.length - 1, (i + 1) * segmentLength - 1));
+		// console.log(i*segmentLength);
+		// console.log(Math.min(fullSequence.length,((i+1)*segmentLength)));
+		text += addSpace(1) + fullSequence.substring(i * segmentLength, Math.min(fullSequence.length, (i + 1) * segmentLength));
+
+		// text += addSpace(1) + fullSequence.substr(i*segmentLength,Math.min( fullSequence.length-1 ,((i+1)*segmentLength)-1) );
 		// console.log("[GenerateFile:generateSequence] iterated: " + text);
 	}
 	// console.log("[GenerateFile:generateSequence] final: " + text);
@@ -62999,7 +63019,7 @@ function reverseAndComplement(sequence) {
 	var tempSeq = '';
 	var text = '';
 	tempSeq = sequence.split("").reverse().join("");
-	console.log(tempSeq);
+	// console.log(tempSeq);
 
 	for (var i = 0; i < tempSeq.length; i++) {
 		if (tempSeq[i] == 'a') {
@@ -63013,7 +63033,7 @@ function reverseAndComplement(sequence) {
 		}
 	}
 
-	console.log(text);
+	// console.log(text);
 	return text;
 }
 

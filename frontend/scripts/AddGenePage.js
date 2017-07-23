@@ -33,14 +33,14 @@ const AddGenePage = React.createClass({
 	},
 	onUserEnter() {
 		this.setState({numGenes: (this.state.numGenes + 1)}, function() {
-			console.log("AddGenePage.js:onUserEnter - " + newGeneName);
+			// console.log("AddGenePage.js:onUserEnter - " + newGeneName);
 			this.props.changeGeneName(newGeneName);
 			this.props.changeGeneCount(1);
 		});
 	},
 	changeGeneName(newGeneName) {
 		this.setState({numGenes: (this.state.numGenes + 1)}, function() {
-			console.log("AddGenePage.js:onUserEnter - " + newGeneName);
+			// console.log("AddGenePage.js:onUserEnter - " + newGeneName);
 			this.props.changeGeneName(newGeneName);
 			this.props.changeGeneCount(1);
 		});

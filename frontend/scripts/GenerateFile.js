@@ -26,13 +26,22 @@ var writeFile = function(nameList, partList) {
 		if(name.title in hardCodedParts)
 		{
 			let correctedSequence = hardCodedParts[name.title].toLowerCase();
-			if(name.flip)
-			{
-				correctedSequence = reverseAndComplement(correctedSequence);
-			}
+			// if(name.flip)
+			// {
+			// 	correctedSequence = reverseAndComplement(correctedSequence);
+			// }
 			fullSequence += correctedSequence;
 			textFile += addNewLine(1);
-			textFile += addSpace(5)+name.feature+addSpace(24-name.feature.toString().length)+currentBPNum+".."+(currentBPNum + hardCodedParts[name.title].length - 1);
+			textFile += addSpace(5)+name.feature+addSpace(24-name.feature.toString().length);
+			if(name.flip)
+			{
+				// textFile += "complement(" + (currentBPNum + correctedSequence.length - 1) + ".." + currentBPNum + ")";
+				textFile += "complement(" + currentBPNum + ".." + (currentBPNum + correctedSequence.length - 1) + ")";
+			}
+			else
+			{
+				textFile += currentBPNum+".."+(currentBPNum + correctedSequence.length - 1);
+			}
 			currentBPNum += hardCodedParts[name.title].length;
 			textFile += addNewLine(1);
 			textFile += addSpace(29)+"/label=\""+name.title+"\"";
@@ -51,14 +60,23 @@ var writeFile = function(nameList, partList) {
 			}
 			let reducedString = partList[indexNum].sequence.replace(/\n/ig, '');
 			let correctedSequence = reducedString.toLowerCase();
-			if(name.flip)
-			{
-				correctedSequence = reverseAndComplement(correctedSequence);
-			}
+			// if(name.flip)
+			// {
+			// 	correctedSequence = reverseAndComplement(correctedSequence);
+			// }
 			fullSequence += correctedSequence;
 			textFile += addNewLine(1);
-			textFile += addSpace(5)+name.feature+addSpace(24-name.feature.toString().length)+currentBPNum+".."+(currentBPNum + partList[indexNum].sequence.length - 1);
-			currentBPNum += partList[indexNum].sequence.length;
+			textFile += addSpace(5)+name.feature+addSpace(24-name.feature.toString().length);
+			if(name.flip)
+			{
+				// textFile += "complement(" + (currentBPNum + correctedSequence.length - 1) + ".." + currentBPNum + ")";
+				textFile += "complement(" + currentBPNum + ".." + (currentBPNum + correctedSequence.length - 1) + ")";
+			}
+			else
+			{
+				textFile += currentBPNum+".."+(currentBPNum + correctedSequence.length - 1);
+			}
+			currentBPNum += correctedSequence.length;
 			textFile += addNewLine(1);
 			textFile += addSpace(29)+"/label=\""+name.title+"\"";
 		}
@@ -93,7 +111,7 @@ var getGeneList = function(nameList, callback) {
 	Promise.all(urls.map(url =>
 	    fetch(url).then(resp => resp.text())
 	)).then(data => {
-	    console.log(data);
+	    // console.log(data);
 	    let tempURIs = [];
 	    for(let x=0; x<data.length; x++)
 		{
@@ -108,7 +126,7 @@ var getGeneList = function(nameList, callback) {
 					tempURIs[x].title = value;
 				}
 			});
-			console.log(tempURIs[x]);
+			// console.log(tempURIs[x]);
 		}
 		for(let y=0; y<tempURIs.length; y++)
 		{
@@ -118,13 +136,13 @@ var getGeneList = function(nameList, callback) {
 	    Promise.all(FASTAurls.map(seqURL =>
 		    fetch(seqURL).then(resp => resp.text())
 		)).then(seqData => {
-		    console.log(seqData);
+		    // console.log(seqData);
 		    for(let j=0; j<seqData.length; j++)
 			{
 				let startChar = seqData[j].indexOf("\n");
 				let endChar = seqData[j].indexOf(" ");
 				sequenceList.push({title:seqData[j].substr(1, endChar - 1), sequence:seqData[j].substr(startChar + 1, seqData[j].length-1)});
-				console.log(sequenceList);
+				// console.log(sequenceList);
 			}
 		    callback(nameList, sequenceList);
 		})
@@ -143,10 +161,15 @@ function generateSequence(fullSequence) {
 			text += addNewLine(1);
 			if(i==0){text += addSpace(8);}
 			else if(i==segmentsPerLine){text += addSpace(7);}
+			else if(i>=(17*segmentsPerLine)){text += addSpace(5);}
 			else {text += addSpace(6);}
 			text += ""+(i*segmentLength+1);
 		}
-		text += addSpace(1) + fullSequence.substring(i*segmentLength,Math.min(fullSequence.length-1,(i+1)*segmentLength-1));
+		// console.log(i*segmentLength);
+		// console.log(Math.min(fullSequence.length,((i+1)*segmentLength)));
+		text += addSpace(1) + fullSequence.substring(i*segmentLength,Math.min(fullSequence.length,(i+1)*segmentLength));
+
+		// text += addSpace(1) + fullSequence.substr(i*segmentLength,Math.min( fullSequence.length-1 ,((i+1)*segmentLength)-1) );
 		// console.log("[GenerateFile:generateSequence] iterated: " + text);
 	}
 	// console.log("[GenerateFile:generateSequence] final: " + text);
@@ -157,7 +180,7 @@ function reverseAndComplement(sequence) {
 	let tempSeq = '';
 	let text = '';
 	tempSeq = sequence.split("").reverse().join("");
-	console.log(tempSeq);
+	// console.log(tempSeq);
 
 	for(let i=0; i<tempSeq.length;i++)
 	{
@@ -167,7 +190,7 @@ function reverseAndComplement(sequence) {
 		else if (tempSeq[i]=='t') {text += 'a';}
 	}
 
-	console.log(text);
+	// console.log(text);
 	return text;
 }
 

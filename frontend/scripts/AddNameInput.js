@@ -76,7 +76,7 @@ const AddNameInput = React.createClass({
 		this.setState({ hover: false });
 	},
 	onUserEnter(value) {
-		console.log(value.label);
+		// console.log(value.label);
 
 		this.props.changeGeneName(
 			value.label,
