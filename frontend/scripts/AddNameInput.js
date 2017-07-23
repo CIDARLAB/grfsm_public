@@ -44,16 +44,16 @@ var getGeneList = function(input, callback) {
 		json.forEach(function(obj) { 
 			options.push({value: obj.displayId.toLowerCase(), label: obj.name})
 		});
-		callback(options);
+		callback(options, true);
     });
 }
 
 var getOptions = function(input, callback) {
   setTimeout(function() {
-        getGeneList(input, function(data) {
+        getGeneList(input, function(data, flag) {
             callback(null, {
                 options: data,
-                complete: true,
+                complete: flag,
             });
         });
     }, 50);

@@ -5,7 +5,7 @@ export const Recombinases = {
 		stroke: 'black',
 		strokeWidth: 1,
 		fill: '#66ccff',
-		name: 'TP901'
+		name: 'TP901B_AG'
 	},
 	//Blue
 	101: {
@@ -13,7 +13,7 @@ export const Recombinases = {
 		stroke: 'black',
 		strokeWidth: 1,
 		fill: '#66ccff',
-		name: 'TP901'
+		name: 'TP901P_AG'
 	},
 	//Orange triangle
 	102: {
@@ -21,7 +21,7 @@ export const Recombinases = {
 		stroke: 'black',
 		strokeWidth: 1,
 		fill: '#ff9900',
-		name: 'BxbI'
+		name: 'BxBIB_GT'
 	},
 	//Orange oval
 	103: {

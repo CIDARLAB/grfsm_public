@@ -133,7 +133,7 @@ const GeneticCircuit = React.createClass({
 							// }
 							// lastCompID = componentId;
 
-							console.log("[GeneticCircuit:render]: " + componentId);
+							// console.log("[GeneticCircuit:render]: " + componentId);
 							return <IndividualPart
 								key={partIdForKey}
 								partId={componentId}
@@ -161,7 +161,7 @@ const IndividualPart = React.createClass({
 	render() {
 		const partId = Math.abs(this.props.partId);
 		const components = constants.partIdToComponents[partId];
-		console.log("[IndividualPart:render]: " + partId + " " + components);
+		// console.log("[IndividualPart:render]: " + partId + " " + components);
 		const elementHeight = this.props.elementHeight;
 
 		const geneInfo = this.props.geneInfo;
@@ -187,6 +187,8 @@ const IndividualPart = React.createClass({
 		//Need to use the transform to flip the whole part 180 degrees, not each individual
 		//piece
 		let geneNumber = 1;
+
+		// console.log("[GeneticCircuit:IndividualPart] " + startPointOnDNA);
 
 		return(
 			<g transform={transform}>
@@ -352,7 +354,7 @@ const PromoterPiece = React.createClass({
 		let xTextPosition = resetRotation == 0 ? (endPointOnDna+startPointOnDNA)/2 : 0;
 
 		let yTextPosition = resetRotation == 0 ? (12 + staggerHeight) : (0 - staggerHeight);
-		console.log("[PromoterPiece:render] " + yTextPosition + " " + staggerHeight + " " + resetRotation);
+		// console.log("[PromoterPiece:render] " + startPointOnDNA + " " + staggerHeight + " " + resetRotation);
 
 		const transform = "rotate("+degreesOfRotation+" "+(endPointOnDna+startPointOnDNA)/2+" "+height+")";
 		const pieceNameTransform = "rotate("+resetRotation+" "+(endPointOnDna+startPointOnDNA)/4+",0)";
@@ -458,7 +460,7 @@ const TerminatorPiece = React.createClass({
 		let xTextPosition = resetRotation == 0 ? (endPointOnDna+startPointOnDNA)/2 : 0;
 
 		let yTextPosition = resetRotation == 0 ? (12 + staggerHeight) : (0 - staggerHeight);
-		console.log("[TerminatorPiece:render] " + yTextPosition + " " + staggerHeight + " " + resetRotation);
+		// console.log("[TerminatorPiece:render] " + startPointOnDNA + " " + staggerHeight + " " + resetRotation);
 
 		const transform = "rotate("+degreesOfRotation+" "+(endPointOnDna+startPointOnDNA)/2+" "+height+")";
 		const pieceNameTransform = "rotate("+resetRotation+" "+(endPointOnDna+startPointOnDNA)/4+",0)";
@@ -516,7 +518,7 @@ const RecombinationSite = React.createClass({
 		const resetRotation = degreesOfRotation + parentOrientation == 180 ? 180 : 0;
 		const xTextPosition = resetRotation == 0 ? midPoint : 0;
 		const yTextPosition = resetRotation == 0 ? 12 : 0;
-		console.log("[TerminatorPiece:render] " + yTextPosition + " " + resetRotation);
+		// console.log("[RecombinationSite:render] " + yTextPosition + " " + resetRotation);
 
 		const pieceNameTransform = "rotate("+resetRotation+" "+midPoint/2+",0)";
 

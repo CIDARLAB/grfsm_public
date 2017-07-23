@@ -288,47 +288,93 @@ const CircuitDiagram = React.createClass({
 			}
 			partIdForKey += 1;
 
-			componentId = Math.abs(componentId);
-			console.log("[GeneticCircuit:componentDidUpdate()] " + componentId);
-			const components = constants.partIdToComponents[componentId];
-			console.log("[GeneticCircuit:componentDidUpdate()] " + components);
+			const recombinaseID = Math.abs(componentId);
+			// console.log("[GeneticCircuit:componentDidUpdate()] " + componentId);
+			const components = constants.partIdToComponents[recombinaseID];
+			// console.log("[GeneticCircuit:componentDidUpdate()] " + components);
 			let geneNumber = 1;
 
+			//flip == reverse the base pair sequence and then complement it, so ACAG -> GACA -> CTGT
+			let curListLength = partNameList.length;
 			components.map((component) => {
-				switch(component) {
-					case 'R':
-						partNameList.push(constants.Recombinases[componentId].name);
-						break;
-					case '-P':
-					case 'P':
-						partNameList.push("proD");
-						break;
-					case '-G':
-					case 'G':
-						const geneIdToAdd = geneInfo[geneNumber];
-						const individualGeneInfo = this.getGeneInformation(geneIdToAdd);
-						const geneName = individualGeneInfo['geneName'];
-						partNameList.push(geneName);
-						geneNumber += 1;
-						break;
-					case '-T':
-					case 'T':
-						partNameList.push("terminator_black");
-						break;
-					case '-t':
-					case 't':
-						partNameList.push("terminator_red");
-						break;
-					default:
-						break;
+				let flip = false;
+				if(componentId>0)
+				{
+					switch(component) {
+						case 'R':
+							partNameList.push({title:constants.Recombinases[recombinaseID].name, feature:"recombinase", flip:false});
+							break;
+						case '-P':
+							flip = true;
+						case 'P':
+							partNameList.push({title:"proD",feature:"promoter",flip:flip});
+							break;
+						case '-G':
+							flip = true;
+						case 'G':
+							const geneIdToAdd = geneInfo[geneNumber];
+							const individualGeneInfo = this.getGeneInformation(geneIdToAdd);
+							const geneName = individualGeneInfo['geneName'];
+							partNameList.push({title:geneName, feature:"CDS", flip:flip});
+							geneNumber += 1;
+							break;
+						case '-T':
+							flip = true;
+						case 'T':
+							partNameList.push({title:"terminator_black",feature:"terminator", flip:flip});
+							break;
+						case '-t':
+							flip = true;
+						case 't':
+							partNameList.push({title:"terminator_red",feature:"terminator", flip:flip});
+							break;
+						default:
+							break;
+					}
 				}
-				componentId += 1;
+				else
+				{
+					switch(component) {
+						case 'R':
+							partNameList.splice(curListLength, 0, {title:constants.Recombinases[recombinaseID].name, feature:"recombinase", flip:true});
+							break;
+						case 'P':
+							flip = true;
+						case '-P':
+							partNameList.splice(curListLength, 0, {title:"proD",feature:"promoter",flip:flip});
+							break;
+						case 'G':
+							flip = true;
+						case '-G':
+							const geneIdToAdd = geneInfo[geneNumber];
+							const individualGeneInfo = this.getGeneInformation(geneIdToAdd);
+							const geneName = individualGeneInfo['geneName'];
+							partNameList.splice(curListLength, 0, {title:geneName, feature:"CDS", flip:flip});
+							geneNumber += 1;
+							break;
+						case 'T':
+							flip = true;
+						case '-T':
+							partNameList.splice(curListLength, 0, {title:"terminator_black",feature:"terminator", flip:flip});
+							break;
+						case 't':
+							flip = true;
+						case '-t':
+							partNameList.splice(curListLength, 0, {title:"terminator_red",feature:"terminator", flip:flip});
+							break;
+						default:
+							break;
+					}
+				}
+				//Blade: Don't think this is necessary
+				// recombinaseID += 1;
 			})
 		})
 		console.log("[CircuitDiagram:clickedDownload()] " + partNameList);
 		if(partNameList.length > 0) {
-			console.log("[CircuitDiagram:clickedDownload()] " + File.GenerateFile(partNameList));
-			window.location.href="data:application/octet-stream;charset=utf-8;base10," + File.GenerateFile(partNameList);
+			// console.log("[CircuitDiagram:clickedDownload()] " + File.GenerateFile(partNameList));
+			// window.location.href="data:application/octet-stream;charset=utf-8;base10," + File.GenerateFile(partNameList);
+			File.GenerateFile(partNameList)
 		}
 		
 	},
