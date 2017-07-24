@@ -344,6 +344,7 @@ const PromoterPiece = React.createClass({
 
 		const linePosition = this.props.linePosition;
 		const staggerHeight = this.props.textHeightBump;
+		const titleID = "proD"
 
 		let degreesOfRotation = 0;
 		if (orientation === -1) {
@@ -361,7 +362,7 @@ const PromoterPiece = React.createClass({
 		return(
 			<g transform={transform}>
 				<g transform={pieceNameTransform}>
-					<text fill="black" fontFamily="Hind, sans-serif" fontSize="12" textAnchor="middle" x={xTextPosition} y={yTextPosition}>{"Promoter"}</text>
+					<text fill="black" fontFamily="Hind, sans-serif" fontSize="12" textAnchor="middle" x={xTextPosition} y={yTextPosition}>{titleID}</text>
 				</g>
 				<image
 					xlinkHref = {"./img/SBOL/promoter.svg"}
@@ -500,7 +501,7 @@ const RecombinationSite = React.createClass({
 		const stroke = recombinaseInfo['stroke'];
 		const strokeWidth = recombinaseInfo['strokeWidth'];
 		const fill = recombinaseInfo['fill'];
-		const title = recombinaseInfo['name'];
+		let title = recombinaseInfo['name'];
 
 		const isMainCircuit = this.props.isMainCircuit;
 
@@ -512,6 +513,10 @@ const RecombinationSite = React.createClass({
 		let degreesOfRotation = 0;
 		if (orientation === -1) {
 			degreesOfRotation = 180;
+		}
+		if(parentOrientation == 180)
+		{
+			title = recombinaseInfo['flipname'];
 		}
 		const transform = "rotate("+degreesOfRotation+" "+midPoint+" "+height+")";
 

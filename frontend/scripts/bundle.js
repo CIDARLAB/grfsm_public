@@ -60373,7 +60373,7 @@ var CircuitDiagram = React.createClass({
 				} else {
 					switch (component) {
 						case 'R':
-							partNameList.splice(curListLength, 0, { title: constants.Recombinases[recombinaseID].name, feature: "recombinase", flip: true });
+							partNameList.splice(curListLength, 0, { title: constants.Recombinases[recombinaseID].flipname, feature: "recombinase", flip: true });
 							break;
 						case 'P':
 							flip = true;
@@ -63426,6 +63426,7 @@ var PromoterPiece = React.createClass({
 
 		var linePosition = this.props.linePosition;
 		var staggerHeight = this.props.textHeightBump;
+		var titleID = "proD";
 
 		var degreesOfRotation = 0;
 		if (orientation === -1) {
@@ -63449,7 +63450,7 @@ var PromoterPiece = React.createClass({
 				React.createElement(
 					'text',
 					{ fill: 'black', fontFamily: 'Hind, sans-serif', fontSize: '12', textAnchor: 'middle', x: xTextPosition, y: yTextPosition },
-					"Promoter"
+					titleID
 				)
 			),
 			React.createElement('image', {
@@ -63620,6 +63621,10 @@ var RecombinationSite = React.createClass({
 		if (orientation === -1) {
 			degreesOfRotation = 180;
 		}
+		if (parentOrientation == 180) {
+			title = recombinaseInfo['flipname'];
+		}
+		console.log(title + " " + orientation);
 		var transform = "rotate(" + degreesOfRotation + " " + midPoint + " " + height + ")";
 
 		var resetRotation = degreesOfRotation + parentOrientation == 180 ? 180 : 0;
@@ -64808,7 +64813,8 @@ var Recombinases = exports.Recombinases = {
 		stroke: 'black',
 		strokeWidth: 1,
 		fill: '#66ccff',
-		name: 'TP901B_AG'
+		name: 'TP901B_AG',
+		flipname: 'TP901P_AG'
 	},
 	//Blue
 	101: {
@@ -64816,7 +64822,8 @@ var Recombinases = exports.Recombinases = {
 		stroke: 'black',
 		strokeWidth: 1,
 		fill: '#66ccff',
-		name: 'TP901P_AG'
+		name: 'TP901B_TC',
+		flipname: 'TP901P_TC'
 	},
 	//Orange triangle
 	102: {
@@ -64824,7 +64831,8 @@ var Recombinases = exports.Recombinases = {
 		stroke: 'black',
 		strokeWidth: 1,
 		fill: '#ff9900',
-		name: 'BxBIB_GT'
+		name: 'BxBIB_GT',
+		flipname: 'BxBIP_GT'
 	},
 	//Orange oval
 	103: {

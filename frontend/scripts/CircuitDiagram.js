@@ -336,7 +336,7 @@ const CircuitDiagram = React.createClass({
 				{
 					switch(component) {
 						case 'R':
-							partNameList.splice(curListLength, 0, {title:constants.Recombinases[recombinaseID].name, feature:"recombinase", flip:true});
+							partNameList.splice(curListLength, 0, {title:constants.Recombinases[recombinaseID].flipname, feature:"recombinase", flip:true});
 							break;
 						case 'P':
 							flip = true;
