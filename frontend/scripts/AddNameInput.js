@@ -9,7 +9,7 @@ var $ = require('jQuery');
 var Select = require('react-select');
 
 //http GET request for synbio CDS dna
-//https://synbiohub.programmingbiology.org/remoteSearch/role%3D%3Chttp%3A%2F%2Fidentifiers.org%2Fso%2FSO%3A0000316%3E%26/?offset=0&limit=50
+//https://synbiohub.programmingbiology.org/remoteSearch/role%3D%3Chttp%3A%2F%2Fidentifiers.org%2Fso%2FSO%3A0000316%3E%26/?offset=0&limit=100000
 
 const addNameInputStyles = {
 	textStyle: {
@@ -35,29 +35,7 @@ const addNameInputStyles = {
 	},
 };
 
-var getGeneList = function(input, callback) {
-  fetch(`https://synbiohub.programmingbiology.org/remoteSearch/role%3D%3Chttp%3A%2F%2Fidentifiers.org%2Fso%2FSO%3A0000316%3E%26${input}/?offset=0&limit=50`)
-    .then((response) => {
-		return response.json();
-    }).then((json) => {
-		let options = [];
-		json.forEach(function(obj) { 
-			options.push({value: obj.displayId.toLowerCase(), label: obj.name})
-		});
-		callback(options, true);
-    });
-}
-
-var getOptions = function(input, callback) {
-  setTimeout(function() {
-        getGeneList(input, function(data, flag) {
-            callback(null, {
-                options: data,
-                complete: flag,
-            });
-        });
-    }, 50);
-};
+var searchDatabase = "https://synbiohub.org/remoteSearch/role%3D%3Chttp%3A%2F%2Fidentifiers.org%2Fso%2FSO%3A0000316%3E%26";
 
 //AddName box
 const AddNameInput = React.createClass({
@@ -66,7 +44,14 @@ const AddNameInput = React.createClass({
 			selectedGene: '',
 			selectableList: [],
 			geneList: [],
-			hover: false
+			hover: false,
+			databaseOptions: [
+			  { value: 'https://synbiohub.org/remoteSearch/role%3D%3Chttp%3A%2F%2Fidentifiers.org%2Fso%2FSO%3A0000316%3E%26', label: 'SynBioHub' },
+			  { value: 'https://synbiohub.programmingbiology.org/remoteSearch/role%3D%3Chttp%3A%2F%2Fidentifiers.org%2Fso%2FSO%3A0000316%3E%26', label: 'LCP SynBioHub' }
+			],
+			geneOptions: [],
+			selectedDatabase: 'https://synbiohub.org/remoteSearch/role%3D%3Chttp%3A%2F%2Fidentifiers.org%2Fso%2FSO%3A0000316%3E%26',
+			isLoadingExternally: false,
 		};
 	},
 	onMouseEnter() {
@@ -76,12 +61,47 @@ const AddNameInput = React.createClass({
 		this.setState({ hover: false });
 	},
 	onUserEnter(value) {
-		// console.log(value.label);
+		// console.log(value.label + ' ' + value.uri);
 
 		this.props.changeGeneName(
 			value.label,
+			value.uri,
+			value.value
 		);
 		this.setState({ selectedGene: value });
+	},
+	componentDidMount(){
+		this.updateGeneList('');
+	},
+	saveDatabaseChange(value) {
+		if(value !== undefined)
+		{
+			// console.log(value.value);
+			searchDatabase = value.value;
+			this.setState({ selectedDatabase: value.value },
+				this.updateGeneList('')
+			);
+
+		}
+	},
+	onInputChange(inputValue) {
+		// console.log("[AddNameInput:onInputChange]: inputValue: " + inputValue);
+		this.setState({ isLoadingExternally: true, hasInput: true });
+		this.updateGeneList(inputValue)
+	    return inputValue;
+	},  
+	updateGeneList(input) {
+	  // console.log("[AddNameInput:updateGeneList]: searchDatabase: " + searchDatabase);
+	  fetch(`${searchDatabase}${input}/?offset=0&limit=500`)
+	    .then((response) => {
+			return response.json();
+	    }).then((json) => {
+			let options = [];
+			json.forEach(function(obj) { 
+				options.push({value: obj.displayId, label: obj.name, uri:obj.uri})
+			});
+			this.setState({ geneOptions: options, isLoadingExternally: false });
+	    });
 	},
 	render() {
 		const height = this.props.height;
@@ -116,11 +136,27 @@ const AddNameInput = React.createClass({
 		}
 		return (
 			<div>
-				<Select.Async
-				    name="form-field-name"
-				    value={this.state.selectedGene.label}
-				    loadOptions={getOptions}
-				    onChange={this.onUserEnter}
+				<div style={{fontSize:"15", fontFamily:"Open Sans, sans-serif"}}>
+					{"Select Gene Database:"}
+				</div>
+				<Select
+				  name="form-field-name"
+				  placeholder="Select..."
+				  value={this.state.selectedDatabase}
+				  options={this.state.databaseOptions}
+				  onChange={this.saveDatabaseChange}
+				/>
+				<div style={{fontSize:"15", marginTop: '10px', fontFamily:"Open Sans, sans-serif"}}>
+					{"Select Genes to Add to Circuit:"}
+				</div>
+				<Select
+				  name="form-field-name"
+				  placeholder="Search Database..."
+				  value={this.state.selectedGene.label}
+				  options={this.state.geneOptions}
+  				  isLoading={this.state.isLoadingExternally}
+				  onInputChange={this.onInputChange}
+				  onChange={this.onUserEnter}
 				/>
 			</div>
 		);

@@ -57,6 +57,7 @@ const App = React.createClass({
 			pageId: 0,
 			pagePriorToTutorial: undefined,
 			newGeneName: '',
+			newDatabase: '',
 			genes: [],
 			// TODO: this is harcoded
 			// Make a way to have this array of arrays to change dynamically based on the # of states
@@ -217,7 +218,9 @@ const App = React.createClass({
 	*/
 	onUserEnter() {
 		const newGeneName = this.state.newGeneName;
-		console.log('main.js:onUserEnter - ' + this.state.newGeneName);
+		const newDatabase = this.state.newDatabase;
+		const newSecondTitle = this.state.newSecondTitle;
+		console.log('main.js:onUserEnter - ' + this.state.newGeneName + ' ' + this.state.newDatabase + ' ' + this.state.newSecondTitle);
 		const newID = this.state.genes.length;
 
 		//Chooses the color to associate with this gene randomly at first
@@ -226,22 +229,28 @@ const App = React.createClass({
 		const genes = this.state.genes.concat({
 			id: newID,
 			geneName: newGeneName,
+			database: newDatabase,
+			secondTitle: newSecondTitle,
 			color: color,
 		});
 		this.setState({
 			newGeneName: '',
+			newDatabase: '',
+			newSecondTitle: '',
 			genes: genes,
 		});
 	},
 	/*
 	* Changes the value of the newGeneName state variable
 	*/
-	changeGeneName(newGeneName) {
+	changeGeneName(newGeneName, newDatabase, newSecondTitle) {
 		this.setState({
 			newGeneName: newGeneName,
+			newDatabase: newDatabase,
+			newSecondTitle: newSecondTitle, 
 		},
 		function(){
-			console.log('main.js:changeGeneName - ' + this.state.newGeneName);
+			console.log('main.js:changeGeneName - ' + this.state.newGeneName + ' ' + this.state.newDatabase + ' ' + this.state.newSecondTitle);
 			this.onUserEnter()
 		}
 		);
@@ -256,6 +265,8 @@ const App = React.createClass({
 					id: geneId,
 					color: color,
 					geneName: gene.geneName,
+					database: gene.database,
+					secondTitle: gene.secondTitle
 				})
 			}
 			else {

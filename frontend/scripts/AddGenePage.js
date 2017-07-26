@@ -31,17 +31,10 @@ const AddGenePage = React.createClass({
 	onUserChangeColor(geneId, color) {
 		this.props.onUserChangeColor(geneId, color);
 	},
-	onUserEnter() {
+	changeGeneName(newGeneName, newDatabase, newSecondTitle) {
 		this.setState({numGenes: (this.state.numGenes + 1)}, function() {
 			// console.log("AddGenePage.js:onUserEnter - " + newGeneName);
-			this.props.changeGeneName(newGeneName);
-			this.props.changeGeneCount(1);
-		});
-	},
-	changeGeneName(newGeneName) {
-		this.setState({numGenes: (this.state.numGenes + 1)}, function() {
-			// console.log("AddGenePage.js:onUserEnter - " + newGeneName);
-			this.props.changeGeneName(newGeneName);
+			this.props.changeGeneName(newGeneName, newDatabase, newSecondTitle);
 			this.props.changeGeneCount(1);
 		});
 	},
@@ -90,7 +83,6 @@ const AddGenePage = React.createClass({
 						height={50}
 						width={inputAndListWidth}
 						newGeneName={newGeneName}
-						onUserEnter={this.onUserEnter}
 						changeGeneName={this.changeGeneName}
 					/>
 					<GeneList
@@ -124,7 +116,6 @@ const AddGenePage = React.createClass({
 						height={50}
 						width={inputAndListWidth}
 						newGeneName={newGeneName}
-						onUserEnter={this.onUserEnter}
 						changeGeneName={this.changeGeneName}
 					/>
 					<GeneList

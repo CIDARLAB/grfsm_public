@@ -48,17 +48,18 @@ var writeFile = function(nameList, partList) {
 		}
 		else
 		{
-			// console.log(name);
-			// console.log(name.title);
-			// console.log(partList);
+			console.log(name);
+			console.log(name.title);
+			console.log(partList);
 			let indexNum = -1;
 			for(let i = 0; i < partList.length; i++) {
-			   if(partList[i].title === name.title) {
+				console.log(name.title + " " + name.secondTitle + " " + partList[i].title);
+			   if(partList[i].title === name.title || partList[i].title === name.secondTitle) {
 			     indexNum = i;
 			     break;
 			   }
 			}
-			let reducedString = partList[indexNum].sequence.replace(/\n/ig, '');
+			let reducedString = partList[indexNum].sequence;
 			let correctedSequence = reducedString.toLowerCase();
 			// if(name.flip)
 			// {
@@ -78,7 +79,12 @@ var writeFile = function(nameList, partList) {
 			}
 			currentBPNum += correctedSequence.length;
 			textFile += addNewLine(1);
-			textFile += addSpace(29)+"/label=\""+name.title+"\"";
+			textFile += addSpace(29)+"/label=\""+name.title;
+			if(name.secondTitle !== undefined && name.secondTitle !== name.title)
+			{
+				textFile += addSpace(1)+"("+name.secondTitle+")";
+			}
+			textFile += "\"";
 		}
 	})
 
@@ -94,58 +100,43 @@ var writeFile = function(nameList, partList) {
 
 var getGeneList = function(nameList, callback) {
 	let urls = [];
-	let FASTAurls = [];
 	let sequenceList = [];
 
 	for(let i=0; i<nameList.length; i++)
 	{
 		if(!(nameList[i].title in hardCodedParts))
 		{
-			let searchArray = "https://synbiohub.programmingbiology.org/remoteSearch/role%3D%3Chttp%3A%2F%2Fidentifiers.org%2Fso%2FSO%3A0000316%3E%26"+nameList[i].title+"/?offset=0&limit=50";
-			if(urls.indexOf(searchArray) === -1)
+			console.log(nameList[i]);
+			console.log(nameList[i].uri);
+			let fullURI = nameList[i].uri + "/" + nameList[i].title + ".gb";
+			if(urls.indexOf(fullURI) === -1)
 			{
-				urls.push(searchArray);
+				urls.push(fullURI);
 			}
 		}
 	}
-	Promise.all(urls.map(url =>
-	    fetch(url).then(resp => resp.text())
-	)).then(data => {
-	    // console.log(data);
-	    let tempURIs = [];
-	    for(let x=0; x<data.length; x++)
-		{
-			tempURIs[x] = {uri:"", title:""}
-			JSON.parse(data[x], (key, value) => {
-				if(key == "uri")
-				{
-					tempURIs[x].uri = value;
-				}
-				else if(key == "name")
-				{
-					tempURIs[x].title = value;
-				}
-			});
-			// console.log(tempURIs[x]);
-		}
-		for(let y=0; y<tempURIs.length; y++)
-		{
-			FASTAurls.push(tempURIs[y].uri + "/" + tempURIs[y].title + ".fasta");
-		}
 
-	    Promise.all(FASTAurls.map(seqURL =>
-		    fetch(seqURL).then(resp => resp.text())
-		)).then(seqData => {
-		    // console.log(seqData);
-		    for(let j=0; j<seqData.length; j++)
-			{
-				let startChar = seqData[j].indexOf("\n");
-				let endChar = seqData[j].indexOf(" ");
-				sequenceList.push({title:seqData[j].substr(1, endChar - 1), sequence:seqData[j].substr(startChar + 1, seqData[j].length-1)});
-				// console.log(sequenceList);
-			}
-		    callback(nameList, sequenceList);
-		})
+    Promise.all(urls.map(seqURL =>
+	    fetch(seqURL).then(resp => resp.text())
+	)).then(seqData => {
+	    // console.log(seqData);
+	    for(let j=0; j<seqData.length; j++)
+		{
+			let titleStartChar = seqData[j].indexOf("ACCESSION") + ("ACCESSION").toString().length;
+			let titleEndChar = seqData[j].indexOf("VERSION");
+			let titleName = seqData[j].substring(titleStartChar, titleEndChar);
+			titleName = titleName.replace(/\n|\s/ig, '');
+			console.log("[GenerateFile:getGeneList] title: " + titleName);
+
+			let seqStartChar = seqData[j].substring(seqData[j].lastIndexOf("ORIGIN"), seqData[j].length).indexOf("1");
+			let seqEndChar = seqData[j].indexOf("/");
+			let seqClean = seqData[j].substr(seqStartChar + 2, seqEndChar-1);
+			seqClean = seqClean.replace(/\n|[0-9]+|\s/ig, '');
+			console.log("[GenerateFile:getGeneList] sequence: " + seqClean);
+			sequenceList.push({title:titleName, sequence:seqClean});
+			// console.log(sequenceList);
+		}
+	    callback(nameList, sequenceList);
 	})
 }
 

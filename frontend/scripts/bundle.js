@@ -59500,17 +59500,10 @@ var AddGenePage = React.createClass({
 	onUserChangeColor: function onUserChangeColor(geneId, color) {
 		this.props.onUserChangeColor(geneId, color);
 	},
-	onUserEnter: function onUserEnter() {
+	changeGeneName: function changeGeneName(newGeneName, newDatabase, newSecondTitle) {
 		this.setState({ numGenes: this.state.numGenes + 1 }, function () {
 			// console.log("AddGenePage.js:onUserEnter - " + newGeneName);
-			this.props.changeGeneName(newGeneName);
-			this.props.changeGeneCount(1);
-		});
-	},
-	changeGeneName: function changeGeneName(newGeneName) {
-		this.setState({ numGenes: this.state.numGenes + 1 }, function () {
-			// console.log("AddGenePage.js:onUserEnter - " + newGeneName);
-			this.props.changeGeneName(newGeneName);
+			this.props.changeGeneName(newGeneName, newDatabase, newSecondTitle);
 			this.props.changeGeneCount(1);
 		});
 	},
@@ -59562,7 +59555,6 @@ var AddGenePage = React.createClass({
 						height: 50,
 						width: inputAndListWidth,
 						newGeneName: newGeneName,
-						onUserEnter: this.onUserEnter,
 						changeGeneName: this.changeGeneName
 					}),
 					React.createElement(GeneList, {
@@ -59600,7 +59592,6 @@ var AddGenePage = React.createClass({
 						height: 50,
 						width: inputAndListWidth,
 						newGeneName: newGeneName,
-						onUserEnter: this.onUserEnter,
 						changeGeneName: this.changeGeneName
 					}),
 					React.createElement(GeneList, {
@@ -59691,7 +59682,7 @@ var $ = require('jQuery');
 var Select = require('react-select');
 
 //http GET request for synbio CDS dna
-//https://synbiohub.programmingbiology.org/remoteSearch/role%3D%3Chttp%3A%2F%2Fidentifiers.org%2Fso%2FSO%3A0000316%3E%26/?offset=0&limit=50
+//https://synbiohub.programmingbiology.org/remoteSearch/role%3D%3Chttp%3A%2F%2Fidentifiers.org%2Fso%2FSO%3A0000316%3E%26/?offset=0&limit=100000
 
 var addNameInputStyles = {
 	textStyle: {
@@ -59717,28 +59708,7 @@ var addNameInputStyles = {
 	}
 };
 
-var getGeneList = function getGeneList(input, callback) {
-	fetch('https://synbiohub.programmingbiology.org/remoteSearch/role%3D%3Chttp%3A%2F%2Fidentifiers.org%2Fso%2FSO%3A0000316%3E%26' + input + '/?offset=0&limit=50').then(function (response) {
-		return response.json();
-	}).then(function (json) {
-		var options = [];
-		json.forEach(function (obj) {
-			options.push({ value: obj.displayId.toLowerCase(), label: obj.name });
-		});
-		callback(options, true);
-	});
-};
-
-var getOptions = function getOptions(input, callback) {
-	setTimeout(function () {
-		getGeneList(input, function (data, flag) {
-			callback(null, {
-				options: data,
-				complete: flag
-			});
-		});
-	}, 50);
-};
+var searchDatabase = "https://synbiohub.org/remoteSearch/role%3D%3Chttp%3A%2F%2Fidentifiers.org%2Fso%2FSO%3A0000316%3E%26";
 
 //AddName box
 var AddNameInput = React.createClass({
@@ -59748,7 +59718,11 @@ var AddNameInput = React.createClass({
 			selectedGene: '',
 			selectableList: [],
 			geneList: [],
-			hover: false
+			hover: false,
+			databaseOptions: [{ value: 'https://synbiohub.org/remoteSearch/role%3D%3Chttp%3A%2F%2Fidentifiers.org%2Fso%2FSO%3A0000316%3E%26', label: 'SynBioHub' }, { value: 'https://synbiohub.programmingbiology.org/remoteSearch/role%3D%3Chttp%3A%2F%2Fidentifiers.org%2Fso%2FSO%3A0000316%3E%26', label: 'LCP SynBioHub' }],
+			geneOptions: [],
+			selectedDatabase: 'https://synbiohub.org/remoteSearch/role%3D%3Chttp%3A%2F%2Fidentifiers.org%2Fso%2FSO%3A0000316%3E%26',
+			isLoadingExternally: false
 		};
 	},
 	onMouseEnter: function onMouseEnter() {
@@ -59758,10 +59732,40 @@ var AddNameInput = React.createClass({
 		this.setState({ hover: false });
 	},
 	onUserEnter: function onUserEnter(value) {
-		// console.log(value.label);
+		// console.log(value.label + ' ' + value.uri);
 
-		this.props.changeGeneName(value.label);
+		this.props.changeGeneName(value.label, value.uri, value.value);
 		this.setState({ selectedGene: value });
+	},
+	componentDidMount: function componentDidMount() {
+		this.updateGeneList('');
+	},
+	saveDatabaseChange: function saveDatabaseChange(value) {
+		if (value !== undefined) {
+			// console.log(value.value);
+			searchDatabase = value.value;
+			this.setState({ selectedDatabase: value.value }, this.updateGeneList(''));
+		}
+	},
+	onInputChange: function onInputChange(inputValue) {
+		// console.log("[AddNameInput:onInputChange]: inputValue: " + inputValue);
+		this.setState({ isLoadingExternally: true, hasInput: true });
+		this.updateGeneList(inputValue);
+		return inputValue;
+	},
+	updateGeneList: function updateGeneList(input) {
+		var _this = this;
+
+		// console.log("[AddNameInput:updateGeneList]: searchDatabase: " + searchDatabase);
+		fetch('' + searchDatabase + input + '/?offset=0&limit=500').then(function (response) {
+			return response.json();
+		}).then(function (json) {
+			var options = [];
+			json.forEach(function (obj) {
+				options.push({ value: obj.displayId, label: obj.name, uri: obj.uri });
+			});
+			_this.setState({ geneOptions: options, isLoadingExternally: false });
+		});
 	},
 	render: function render() {
 		var height = this.props.height;
@@ -59796,10 +59800,30 @@ var AddNameInput = React.createClass({
 		return React.createElement(
 			'div',
 			null,
-			React.createElement(Select.Async, {
+			React.createElement(
+				'div',
+				{ style: { fontSize: "15", fontFamily: "Open Sans, sans-serif" } },
+				"Select Gene Database:"
+			),
+			React.createElement(Select, {
 				name: 'form-field-name',
+				placeholder: 'Select...',
+				value: this.state.selectedDatabase,
+				options: this.state.databaseOptions,
+				onChange: this.saveDatabaseChange
+			}),
+			React.createElement(
+				'div',
+				{ style: { fontSize: "15", marginTop: '10px', fontFamily: "Open Sans, sans-serif" } },
+				"Select Genes to Add to Circuit:"
+			),
+			React.createElement(Select, {
+				name: 'form-field-name',
+				placeholder: 'Search Database...',
 				value: this.state.selectedGene.label,
-				loadOptions: getOptions,
+				options: this.state.geneOptions,
+				isLoading: this.state.isLoadingExternally,
+				onInputChange: this.onInputChange,
 				onChange: this.onUserEnter
 			})
 		);
@@ -60354,7 +60378,9 @@ var CircuitDiagram = React.createClass({
 							var geneIdToAdd = geneInfo[geneNumber];
 							var individualGeneInfo = _this.getGeneInformation(geneIdToAdd);
 							var geneName = individualGeneInfo['geneName'];
-							partNameList.push({ title: geneName, feature: "CDS", flip: flip });
+							var geneDatabase = individualGeneInfo['database'];
+							var secondTitle = individualGeneInfo['secondTitle'];
+							partNameList.push({ title: geneName, uri: geneDatabase, secondTitle: secondTitle, feature: "CDS", flip: flip });
 							geneNumber += 1;
 							break;
 						case '-T':
@@ -60386,7 +60412,9 @@ var CircuitDiagram = React.createClass({
 							var _geneIdToAdd = geneInfo[geneNumber];
 							var _individualGeneInfo = _this.getGeneInformation(_geneIdToAdd);
 							var _geneName = _individualGeneInfo['geneName'];
-							partNameList.splice(curListLength, 0, { title: _geneName, feature: "CDS", flip: flip });
+							var _geneDatabase = _individualGeneInfo['database'];
+							var _secondTitle = _individualGeneInfo['secondTitle'];
+							partNameList.splice(curListLength, 0, { title: _geneName, uri: _geneDatabase, secondTitle: _secondTitle, feature: "CDS", flip: flip });
 							geneNumber += 1;
 							break;
 						case 'T':
@@ -60409,8 +60437,6 @@ var CircuitDiagram = React.createClass({
 		});
 		console.log("[CircuitDiagram:clickedDownload()] " + partNameList);
 		if (partNameList.length > 0) {
-			// console.log("[CircuitDiagram:clickedDownload()] " + File.GenerateFile(partNameList));
-			// window.location.href="data:application/octet-stream;charset=utf-8;base10," + File.GenerateFile(partNameList);
 			File.GenerateFile(partNameList);
 		}
 	},
@@ -62887,17 +62913,18 @@ var writeFile = function writeFile(nameList, partList) {
 			textFile += addNewLine(1);
 			textFile += addSpace(29) + "/label=\"" + name.title + "\"";
 		} else {
-			// console.log(name);
-			// console.log(name.title);
-			// console.log(partList);
+			console.log(name);
+			console.log(name.title);
+			console.log(partList);
 			var indexNum = -1;
 			for (var i = 0; i < partList.length; i++) {
-				if (partList[i].title === name.title) {
+				console.log(name.title + " " + name.secondTitle + " " + partList[i].title);
+				if (partList[i].title === name.title || partList[i].title === name.secondTitle) {
 					indexNum = i;
 					break;
 				}
 			}
-			var reducedString = partList[indexNum].sequence.replace(/\n/ig, '');
+			var reducedString = partList[indexNum].sequence;
 			var _correctedSequence = reducedString.toLowerCase();
 			// if(name.flip)
 			// {
@@ -62914,7 +62941,11 @@ var writeFile = function writeFile(nameList, partList) {
 			}
 			currentBPNum += _correctedSequence.length;
 			textFile += addNewLine(1);
-			textFile += addSpace(29) + "/label=\"" + name.title + "\"";
+			textFile += addSpace(29) + "/label=\"" + name.title;
+			if (name.secondTitle !== undefined && name.secondTitle !== name.title) {
+				textFile += addSpace(1) + "(" + name.secondTitle + ")";
+			}
+			textFile += "\"";
 		}
 	});
 
@@ -62930,58 +62961,41 @@ var writeFile = function writeFile(nameList, partList) {
 
 var getGeneList = function getGeneList(nameList, callback) {
 	var urls = [];
-	var FASTAurls = [];
 	var sequenceList = [];
 
 	for (var i = 0; i < nameList.length; i++) {
 		if (!(nameList[i].title in hardCodedParts)) {
-			var searchArray = "https://synbiohub.programmingbiology.org/remoteSearch/role%3D%3Chttp%3A%2F%2Fidentifiers.org%2Fso%2FSO%3A0000316%3E%26" + nameList[i].title + "/?offset=0&limit=50";
-			if (urls.indexOf(searchArray) === -1) {
-				urls.push(searchArray);
+			console.log(nameList[i]);
+			console.log(nameList[i].uri);
+			var fullURI = nameList[i].uri + "/" + nameList[i].title + ".gb";
+			if (urls.indexOf(fullURI) === -1) {
+				urls.push(fullURI);
 			}
 		}
 	}
-	Promise.all(urls.map(function (url) {
-		return fetch(url).then(function (resp) {
+
+	Promise.all(urls.map(function (seqURL) {
+		return fetch(seqURL).then(function (resp) {
 			return resp.text();
 		});
-	})).then(function (data) {
-		// console.log(data);
-		var tempURIs = [];
+	})).then(function (seqData) {
+		// console.log(seqData);
+		for (var j = 0; j < seqData.length; j++) {
+			var titleStartChar = seqData[j].indexOf("ACCESSION") + "ACCESSION".toString().length;
+			var titleEndChar = seqData[j].indexOf("VERSION");
+			var titleName = seqData[j].substring(titleStartChar, titleEndChar);
+			titleName = titleName.replace(/\n|\s/ig, '');
+			console.log("[GenerateFile:getGeneList] title: " + titleName);
 
-		var _loop = function _loop(x) {
-			tempURIs[x] = { uri: "", title: "" };
-			JSON.parse(data[x], function (key, value) {
-				if (key == "uri") {
-					tempURIs[x].uri = value;
-				} else if (key == "name") {
-					tempURIs[x].title = value;
-				}
-			});
-			// console.log(tempURIs[x]);
-		};
-
-		for (var x = 0; x < data.length; x++) {
-			_loop(x);
+			var seqStartChar = seqData[j].substring(seqData[j].lastIndexOf("ORIGIN"), seqData[j].length).indexOf("1");
+			var seqEndChar = seqData[j].indexOf("/");
+			var seqClean = seqData[j].substr(seqStartChar + 2, seqEndChar - 1);
+			seqClean = seqClean.replace(/\n|[0-9]+|\s/ig, '');
+			console.log("[GenerateFile:getGeneList] sequence: " + seqClean);
+			sequenceList.push({ title: titleName, sequence: seqClean });
+			// console.log(sequenceList);
 		}
-		for (var y = 0; y < tempURIs.length; y++) {
-			FASTAurls.push(tempURIs[y].uri + "/" + tempURIs[y].title + ".fasta");
-		}
-
-		Promise.all(FASTAurls.map(function (seqURL) {
-			return fetch(seqURL).then(function (resp) {
-				return resp.text();
-			});
-		})).then(function (seqData) {
-			// console.log(seqData);
-			for (var j = 0; j < seqData.length; j++) {
-				var startChar = seqData[j].indexOf("\n");
-				var endChar = seqData[j].indexOf(" ");
-				sequenceList.push({ title: seqData[j].substr(1, endChar - 1), sequence: seqData[j].substr(startChar + 1, seqData[j].length - 1) });
-				// console.log(sequenceList);
-			}
-			callback(nameList, sequenceList);
-		});
+		callback(nameList, sequenceList);
 	});
 };
 
@@ -63624,7 +63638,6 @@ var RecombinationSite = React.createClass({
 		if (parentOrientation == 180) {
 			title = recombinaseInfo['flipname'];
 		}
-		console.log(title + " " + orientation);
 		var transform = "rotate(" + degreesOfRotation + " " + midPoint + " " + height + ")";
 
 		var resetRotation = degreesOfRotation + parentOrientation == 180 ? 180 : 0;
@@ -64985,6 +64998,7 @@ var App = React.createClass({
 			pageId: 0,
 			pagePriorToTutorial: undefined,
 			newGeneName: '',
+			newDatabase: '',
 			genes: [],
 			// TODO: this is harcoded
 			// Make a way to have this array of arrays to change dynamically based on the # of states
@@ -65145,7 +65159,9 @@ var App = React.createClass({
  */
 	onUserEnter: function onUserEnter() {
 		var newGeneName = this.state.newGeneName;
-		console.log('main.js:onUserEnter - ' + this.state.newGeneName);
+		var newDatabase = this.state.newDatabase;
+		var newSecondTitle = this.state.newSecondTitle;
+		console.log('main.js:onUserEnter - ' + this.state.newGeneName + ' ' + this.state.newDatabase + ' ' + this.state.newSecondTitle);
 		var newID = this.state.genes.length;
 
 		//Chooses the color to associate with this gene randomly at first
@@ -65154,10 +65170,14 @@ var App = React.createClass({
 		var genes = this.state.genes.concat({
 			id: newID,
 			geneName: newGeneName,
+			database: newDatabase,
+			secondTitle: newSecondTitle,
 			color: color
 		});
 		this.setState({
 			newGeneName: '',
+			newDatabase: '',
+			newSecondTitle: '',
 			genes: genes
 		});
 	},
@@ -65165,11 +65185,13 @@ var App = React.createClass({
 	/*
  * Changes the value of the newGeneName state variable
  */
-	changeGeneName: function changeGeneName(newGeneName) {
+	changeGeneName: function changeGeneName(newGeneName, newDatabase, newSecondTitle) {
 		this.setState({
-			newGeneName: newGeneName
+			newGeneName: newGeneName,
+			newDatabase: newDatabase,
+			newSecondTitle: newSecondTitle
 		}, function () {
-			console.log('main.js:changeGeneName - ' + this.state.newGeneName);
+			console.log('main.js:changeGeneName - ' + this.state.newGeneName + ' ' + this.state.newDatabase + ' ' + this.state.newSecondTitle);
 			this.onUserEnter();
 		});
 	},
@@ -65182,7 +65204,9 @@ var App = React.createClass({
 				newGenesArray.push({
 					id: geneId,
 					color: color,
-					geneName: gene.geneName
+					geneName: gene.geneName,
+					database: gene.database,
+					secondTitle: gene.secondTitle
 				});
 			} else {
 				newGenesArray.push(gene);

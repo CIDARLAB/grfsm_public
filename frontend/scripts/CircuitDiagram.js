@@ -315,7 +315,9 @@ const CircuitDiagram = React.createClass({
 							const geneIdToAdd = geneInfo[geneNumber];
 							const individualGeneInfo = this.getGeneInformation(geneIdToAdd);
 							const geneName = individualGeneInfo['geneName'];
-							partNameList.push({title:geneName, feature:"CDS", flip:flip});
+							const geneDatabase = individualGeneInfo['database'];
+							const secondTitle = individualGeneInfo['secondTitle'];
+							partNameList.push({title:geneName, uri:geneDatabase, secondTitle: secondTitle, feature:"CDS", flip:flip});
 							geneNumber += 1;
 							break;
 						case '-T':
@@ -349,7 +351,9 @@ const CircuitDiagram = React.createClass({
 							const geneIdToAdd = geneInfo[geneNumber];
 							const individualGeneInfo = this.getGeneInformation(geneIdToAdd);
 							const geneName = individualGeneInfo['geneName'];
-							partNameList.splice(curListLength, 0, {title:geneName, feature:"CDS", flip:flip});
+							const geneDatabase = individualGeneInfo['database'];
+							const secondTitle = individualGeneInfo['secondTitle'];
+							partNameList.splice(curListLength, 0, {title:geneName, uri:geneDatabase, secondTitle: secondTitle, feature:"CDS", flip:flip});
 							geneNumber += 1;
 							break;
 						case 'T':
@@ -372,8 +376,6 @@ const CircuitDiagram = React.createClass({
 		})
 		console.log("[CircuitDiagram:clickedDownload()] " + partNameList);
 		if(partNameList.length > 0) {
-			// console.log("[CircuitDiagram:clickedDownload()] " + File.GenerateFile(partNameList));
-			// window.location.href="data:application/octet-stream;charset=utf-8;base10," + File.GenerateFile(partNameList);
 			File.GenerateFile(partNameList)
 		}
 		
