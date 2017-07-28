@@ -12,6 +12,8 @@ var GeneticCircuit = require('./GeneticCircuit');
 var DiagramIllustration = require('./DiagramIllustration');
 var DiagramIllustration3Input = require('./DiagramIllustration3Input');
 var PrintPreview = require('./PrintPreview');
+var Zip = require('./GenerateZip');
+
 import * as constants from './constants';
 import * as File from './GenerateFile';
 
@@ -53,8 +55,9 @@ const CircuitDiagram = React.createClass({
 			pdfSettings: {
 				display: 'none',
 			},
-			partNameArray: []
-		};
+			partNameArray: [],
+			isZipReady: "false"
+			};
 	},
 	/*
 	* event listener for when the user clicks on the tutorial link on this page
@@ -114,7 +117,9 @@ const CircuitDiagram = React.createClass({
 			success: function(data) {
 				this.setState({
 					data: data,
-				});
+				},
+				// console.log(data[0])
+				);
 			}.bind(this),
 			failure: function(xhr, status, err) {
 				console.error(this.props.url, status, err.toString());
@@ -213,7 +218,7 @@ const CircuitDiagram = React.createClass({
 	},
 
 	clickedDownload(){
-		console.log("[CircuitDiagram:clickedDownload()]");
+		// console.log("[CircuitDiagram:clickedDownload()]");
 
 		const data = this.state.data;
 		const circuitToShow = this.state.circuitToShow;
@@ -374,11 +379,39 @@ const CircuitDiagram = React.createClass({
 				// recombinaseID += 1;
 			})
 		})
-		console.log("[CircuitDiagram:clickedDownload()] " + partNameList);
+		// console.log("[CircuitDiagram:clickedDownload()] " + partNameList);
 		if(partNameList.length > 0) {
 			File.GenerateFile(partNameList)
 		}
 		
+	},
+
+	clickedZip(){
+		// console.log("[CircuitDiagram:clickedZip()]");
+		const data = this.state.data;
+
+		if (data.length !== 0) {
+			//Check for errors
+			if (data[0][0] === 'Gene regulation program does not exist' || data[0][0] === 'No registers found' || data[0][0] === 'Design does not exist') {
+				return false;
+			}
+			else
+			{
+				this.setState({isZipReady: "loading"});
+				let done = this.doneLoadingZip.bind(this);
+				Zip.GenerateZip(data, this.getGeneInformation, this.props.genes, done);
+			}
+		}
+	},
+
+	doneLoadingZip(){
+		// console.log("[CircuitDiagram:doneLoadingZip()]");
+		this.setState({isZipReady: "false"});
+	},
+
+	downloadZip(){
+		// console.log("[CircuitDiagram:downloadZip()] " + pathToZip);
+		window.location.href = this.state.pathToZip;
 	},
 
 	/*
@@ -547,6 +580,8 @@ const CircuitDiagram = React.createClass({
 					noCircuitsWereFound={noCircuitsWereFound}
 					clickedPDF = {this.clickedPDF}
 					clickedDownload = {this.clickedDownload}
+					clickedZip = {this.clickedZip}
+					isZipReady = {this.state.isZipReady}
 				/>
 				<GeneticCircuit
 					pageWidth={pageWidth}
@@ -648,6 +683,9 @@ const CircuitDiagram = React.createClass({
 					numberOfCircuits={numberOfCircuits}
 					noCircuitsWereFound={noCircuitsWereFound}
 					clickedPDF = {this.clickedPDF}
+					clickedDownload = {this.clickedDownload}
+					clickedZip = {this.clickedZip}
+					isZipReady = {this.state.isZipReady}
 				/>
 				<GeneticCircuit
 					pageWidth={pageWidth}
@@ -713,6 +751,9 @@ const CircuitDiagram = React.createClass({
 					numberOfCircuits={numberOfCircuits}
 					noCircuitsWereFound={noCircuitsWereFound}
 					clickedPDF = {this.clickedPDF}
+					clickedDownload = {this.clickedDownload}
+					clickedZip = {this.clickedZip}
+					isZipReady = {this.state.isZipReady}
 				/>
 				<DiagramIllustration
 					height={pageHeight - 50}
@@ -744,6 +785,9 @@ const CircuitDiagram = React.createClass({
 						numberOfCircuits={numberOfCircuits}
 						noCircuitsWereFound={noCircuitsWereFound}
 						clickedPDF = {this.clickedPDF}
+						clickedDownload = {this.clickedDownload}
+						clickedZip = {this.clickedZip}
+						isZipReady = {this.state.isZipReady}
 					/>
 					<DiagramIllustration3Input
 					height={pageHeight - 50}
@@ -906,7 +950,14 @@ const CircuitDiagramNavBar = React.createClass({
 
 	clickedDownload(){
 		this.props.clickedDownload();
-		// window.location.href='data:application/octet-stream;charset=utf-8;base64,Zm9vIGJhcg=='; 
+	},
+
+	clickedZip(){
+		this.props.clickedZip();
+	},
+
+	downloadZip(){
+		this.props.downloadZip();
 	},
 
 	render() {
@@ -975,6 +1026,7 @@ const CircuitDiagramNavBar = React.createClass({
 		const nextPoints = "0,15 40,15 40,10 60,20 40,30 40,25 0,25";
 
 		let toReturn = null;
+		let zipLink = null;
 		if (noCircuitsWereFound) {
 			// Do not show PDF button
 			toReturn = <div style={navBarStyles}>
@@ -1021,6 +1073,29 @@ const CircuitDiagramNavBar = React.createClass({
 		} else {
 			// Then circuits were found
 			// Show pdf button
+			if(this.props.isZipReady == "true")
+			{
+				zipLink =
+				<input type = {'button'} value = {'Download All .gb Files'}
+				onClick = {this.downloadZip} style = {printButtonStyle}
+				onMouseEnter = {this.onMouseEnterPrint} height="31" onMouseLeave = {this.onMouseEnterPrint}
+				/>
+			}
+			else if(this.props.isZipReady == "loading")
+			{
+				zipLink =
+				<input type = {'button'} value = {'Loading...'} style = {printButtonStyle}
+				onMouseEnter = {this.onMouseEnterPrint} height="31" onMouseLeave = {this.onMouseEnterPrint}
+				/>
+			}
+			else
+			{
+				zipLink =
+				<input type = {'button'} value = {'Generate All .gb Files'}
+				onClick = {this.clickedZip} style = {printButtonStyle}
+				onMouseEnter = {this.onMouseEnterPrint} height="31" onMouseLeave = {this.onMouseEnterPrint}
+				/>
+			}
 			toReturn =
 			<div style={navBarStyles}>
 							<div style={bufferStyle}></div>
@@ -1061,14 +1136,17 @@ const CircuitDiagramNavBar = React.createClass({
 									</text>
 								</svg>
 							</div>
+							{zipLink}
 							<input
 								type = {'button'} value = {'Download .gb File'}
 								onClick = {this.clickedDownload} style = {printButtonStyle}
-								onMouseEnter = {this.onMouseEnterPrint} height="31" onMouseLeave = {this.onMouseEnterPrint}/>
+								onMouseEnter = {this.onMouseEnterPrint} height="31" onMouseLeave = {this.onMouseEnterPrint}
+							/>
 							<input
 								type = {'button'} value = {'Print Preview'}
 								onClick = {this.clickedPDF} style = {printButtonStyle}
-								onMouseEnter = {this.onMouseEnterPrint} height="31" onMouseLeave = {this.onMouseEnterPrint}/>
+								onMouseEnter = {this.onMouseEnterPrint} height="31" onMouseLeave = {this.onMouseEnterPrint}
+							/>
 							<div style={bufferStyle}></div>
 						</div>
 		}

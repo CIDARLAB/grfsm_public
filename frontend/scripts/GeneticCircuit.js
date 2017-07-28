@@ -4,7 +4,7 @@ var React = require('react');
 var ReactDOM = require('react-dom');
 var D3 = require('d3');
 var $ = require('jQuery');
-import * as constants from './constants';
+var constants = require('./constants');
 
 const geneticCircuitStyles = {
 	emptyDivStyle: {
@@ -35,7 +35,6 @@ const GeneticCircuit = React.createClass({
 
 		//Subtract 40 so its not tight at the borders
 		const width = this.props.pageWidth - 40;
-		const fittedTextWidth = this.props.pageWidth;
 
 		//Arbitrary y coordinate to start from
 		const maxCircuitHeight = 40;
@@ -87,7 +86,7 @@ const GeneticCircuit = React.createClass({
 		else {
 			return (
 				<div style={circuitExistsStyle}>
-					<svg width={fittedTextWidth} height={height} id = {'genCirc'}>
+					<svg width={width} height={height} id = {'genCirc'}>
 						<g stroke={'black'}>
 							<line
 								x1={0}
@@ -120,18 +119,6 @@ const GeneticCircuit = React.createClass({
 								geneInfo = geneMapping[partOriginalLocationId];
 							}
 							partIdForKey += 1;
-
-							// Blade: this code was trying to stagger circuit components that were next to each other,
-							// but the more that I played around with it, I don't think this was necessary...
-							// if( (lastCompID < 0 && componentId < 0) || (lastCompID > 0 && componentId > 0) )
-							// {
-							// 	staggerHeight = staggerHeight == 12 ? 0 : 12;
-							// }
-							// else
-							// {
-							// 	staggerHeight = 0;
-							// }
-							// lastCompID = componentId;
 
 							// console.log("[GeneticCircuit:render]: " + componentId);
 							return <IndividualPart

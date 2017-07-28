@@ -1,12 +1,29 @@
 var FileSaver = require('file-saver');
 
 export var GenerateFile = function(nameList) {
-	getGeneList(nameList, function(nameList, partList) {
-			writeFile(nameList, partList)
-		});
+	getGeneList_Promise(nameList).then(
+	seqList => {
+			writeFilePromisified(nameList, seqList).then(
+				resp => {
+					// console.log(resp);
+					let blob = new Blob([resp], {type: "text/plain;charset=utf-8"});
+					FileSaver.saveAs(blob, "grfsm.gb");
+				}
+			);
+	});
 };
 
-var writeFile = function(nameList, partList) {
+export function writeFilePromisified(nameList, partList) {
+    return new Promise(
+        function (resolve, reject) {
+            let textFile = writeFile(nameList, partList);
+            if(textFile !== undefined) {resolve(textFile);}
+            else {reject(new Error("GenerateFile.js function \"writeFile\" returned nothing"))};
+        }
+    );
+}
+
+function writeFile(nameList, partList) {
 	let textFile = "LOCUS";
 	let date = new Date();
 	let fullSequence = '';
@@ -48,12 +65,12 @@ var writeFile = function(nameList, partList) {
 		}
 		else
 		{
-			console.log(name);
-			console.log(name.title);
-			console.log(partList);
+			// console.log(name);
+			// console.log(name.title);
+			// console.log(partList);
 			let indexNum = -1;
 			for(let i = 0; i < partList.length; i++) {
-				console.log(name.title + " " + name.secondTitle + " " + partList[i].title);
+				// console.log(name.title + " " + name.secondTitle + " " + partList[i].title);
 			   if(partList[i].title === name.title || partList[i].title === name.secondTitle) {
 			     indexNum = i;
 			     break;
@@ -94,50 +111,61 @@ var writeFile = function(nameList, partList) {
 	textFile += addNewLine(1);
 	textFile += "//";
 
-	var blob = new Blob([textFile], {type: "text/plain;charset=utf-8"});
-	FileSaver.saveAs(blob, "grfsm.gb");
+	return textFile;
 }
 
-var getGeneList = function(nameList, callback) {
-	let urls = [];
-	let sequenceList = [];
+export function getGeneList_Promise(nameList) {
+	return new Promise(
+        function (resolve, reject) {
+        	let urls = [];
+			let sequenceList = [];
 
-	for(let i=0; i<nameList.length; i++)
-	{
-		if(!(nameList[i].title in hardCodedParts))
-		{
-			console.log(nameList[i]);
-			console.log(nameList[i].uri);
-			let fullURI = nameList[i].uri + "/" + nameList[i].title + ".gb";
-			if(urls.indexOf(fullURI) === -1)
+			for(let i=0; i<nameList.length; i++)
 			{
-				urls.push(fullURI);
+				if(!(nameList[i].title in hardCodedParts))
+				{
+					// console.log(nameList[i]);
+					// console.log(nameList[i].uri);
+					let fullURI = nameList[i].uri + "/" + nameList[i].title + ".gb";
+					if(urls.indexOf(fullURI) === -1)
+					{
+						urls.push(fullURI);
+					}
+				}
 			}
-		}
-	}
 
-    Promise.all(urls.map(seqURL =>
-	    fetch(seqURL).then(resp => resp.text())
-	)).then(seqData => {
-	    // console.log(seqData);
-	    for(let j=0; j<seqData.length; j++)
-		{
-			let titleStartChar = seqData[j].indexOf("ACCESSION") + ("ACCESSION").toString().length;
-			let titleEndChar = seqData[j].indexOf("VERSION");
-			let titleName = seqData[j].substring(titleStartChar, titleEndChar);
-			titleName = titleName.replace(/\n|\s/ig, '');
-			console.log("[GenerateFile:getGeneList] title: " + titleName);
+		    Promise.all(urls.map(seqURL =>
+			    fetch(seqURL).then(resp => resp.text())
+			)).then(seqData => {
+			    // console.log(seqData);
+			    for(let j=0; j<seqData.length; j++)
+				{
+					let titleStartChar = seqData[j].indexOf("ACCESSION") + ("ACCESSION").toString().length;
+					let titleEndChar = seqData[j].indexOf("VERSION");
+					let titleName = seqData[j].substring(titleStartChar, titleEndChar);
+					titleName = titleName.replace(/\n|\s/ig, '');
+					// console.log("[GenerateFile:getGeneList] title: " + titleName);
 
-			let seqStartChar = seqData[j].substring(seqData[j].lastIndexOf("ORIGIN"), seqData[j].length).indexOf("1");
-			let seqEndChar = seqData[j].indexOf("/");
-			let seqClean = seqData[j].substr(seqStartChar + 2, seqEndChar-1);
-			seqClean = seqClean.replace(/\n|[0-9]+|\s/ig, '');
-			console.log("[GenerateFile:getGeneList] sequence: " + seqClean);
-			sequenceList.push({title:titleName, sequence:seqClean});
-			// console.log(sequenceList);
-		}
-	    callback(nameList, sequenceList);
-	})
+					let searchIndex = seqData[j].lastIndexOf("ORIGIN");
+					// console.log("[GenerateFile:getGeneList] searchIndex: " + searchIndex);
+					// console.log("[GenerateFile:getGeneList] seqData[j].substr(searchIndex, seqData[j].length): " + seqData[j].substr(searchIndex, seqData[j].length));
+					let seqStartChar = seqData[j].substr(searchIndex, seqData[j].length);
+					// console.log("[GenerateFile:getGeneList] seqStartChar: " + seqStartChar);
+					seqStartChar = seqStartChar.indexOf("1");
+					// console.log("[GenerateFile:getGeneList] seqStartChar index of 1: " + seqStartChar);
+					let seqEndChar = seqData[j].lastIndexOf("/");
+					let seqClean = seqData[j].substr(searchIndex + seqStartChar, seqEndChar-1);
+					seqClean = seqClean.replace(/\n|[0-9]+|\s|\//ig, '');
+					// console.log("[GenerateFile:getGeneList] sequence: " + seqClean);
+					sequenceList.push({title:titleName, sequence:seqClean});
+					// console.log(sequenceList);
+				}
+
+	            if(sequenceList !== undefined) {resolve(sequenceList);}
+	            else {reject(new Error("GenerateFile.js function \"getGeneList_Promise\" returned nothing"))};
+			})            
+        }
+    );
 }
 
 function generateSequence(fullSequence) {
