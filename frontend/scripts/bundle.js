@@ -60175,7 +60175,6 @@ var CircuitDiagram = React.createClass({
 			stateExpressions: this.props.stateExpressions,
 			numberOfGenes: this.props.numberOfGenes
 		};
-
 		$.ajax({
 			url: this.props.url,
 			dataType: 'json',
