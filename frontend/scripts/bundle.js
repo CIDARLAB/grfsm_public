@@ -60175,6 +60175,7 @@ var CircuitDiagram = React.createClass({
 			stateExpressions: this.props.stateExpressions,
 			numberOfGenes: this.props.numberOfGenes
 		};
+
 		$.ajax({
 			url: this.props.url,
 			dataType: 'json',
@@ -62350,8 +62351,8 @@ var EditPageBody = React.createClass({
 	onUserEnter: function onUserEnter() {
 		this.props.onUserEnter();
 	},
-	changeGeneName: function changeGeneName(newGeneName) {
-		this.props.changeGeneName(newGeneName);
+	changeGeneName: function changeGeneName(newGeneName, newDatabase, newSecondTitle) {
+		this.props.changeGeneName(newGeneName, newDatabase, newSecondTitle);
 	},
 	onDrag: function onDrag(geneId, color) {
 		this.props.onDrag(geneId, color);
@@ -62455,7 +62456,6 @@ var EditPageBody = React.createClass({
 					height: 50,
 					width: rightContainerWidth,
 					newGeneName: newGeneName,
-					onUserEnter: this.onUserEnter,
 					changeGeneName: this.changeGeneName
 				}),
 				React.createElement(GeneList, {
@@ -64252,8 +64252,9 @@ var StateEditPage = React.createClass({
 	onUserEnter: function onUserEnter() {
 		this.props.onUserEnter();
 	},
-	changeGeneName: function changeGeneName(newGeneName) {
-		this.props.changeGeneName(newGeneName);
+	changeGeneName: function changeGeneName(newGeneName, newDatabase, newSecondTitle) {
+		this.props.changeGeneName(newGeneName, newDatabase, newSecondTitle);
+		this.props.changeGeneCount(1);
 	},
 
 	/*
@@ -65320,7 +65321,8 @@ var App = React.createClass({
 					changeGeneName: this.changeGeneName,
 					onUserEnter: this.onUserEnter,
 					onUserChangeColor: this.onUserChangeColor,
-					onTutorialClick: this.onTutorialClick
+					onTutorialClick: this.onTutorialClick,
+					changeGeneCount: this.changeGeneCount
 				});
 				break;
 			case 3:

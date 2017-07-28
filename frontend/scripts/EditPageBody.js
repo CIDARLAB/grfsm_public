@@ -24,8 +24,8 @@ const EditPageBody = React.createClass({
 	onUserEnter() {
 		this.props.onUserEnter();
 	},
-	changeGeneName(newGeneName) {
-		this.props.changeGeneName(newGeneName);
+	changeGeneName(newGeneName, newDatabase, newSecondTitle) {
+		this.props.changeGeneName(newGeneName, newDatabase, newSecondTitle);
 	},
 	onDrag(geneId, color) {
 		this.props.onDrag(geneId, color);
@@ -116,7 +116,6 @@ const EditPageBody = React.createClass({
 						height={50} 
 						width={rightContainerWidth} 
 						newGeneName={newGeneName} 
-						onUserEnter={this.onUserEnter}
 						changeGeneName={this.changeGeneName}
 					/>
 					<GeneList 

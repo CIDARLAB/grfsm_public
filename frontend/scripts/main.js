@@ -380,6 +380,7 @@ const App = React.createClass({
 					onUserEnter={this.onUserEnter}
 					onUserChangeColor={this.onUserChangeColor}
 					onTutorialClick={this.onTutorialClick}
+					changeGeneCount = {this.changeGeneCount}
 				/>;
 				break;
 			case 3:

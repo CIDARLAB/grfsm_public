@@ -50,8 +50,9 @@ const StateEditPage = React.createClass({
 	onUserEnter() {
 		this.props.onUserEnter();
 	},
-	changeGeneName(newGeneName) {
-		this.props.changeGeneName(newGeneName);
+	changeGeneName(newGeneName, newDatabase, newSecondTitle) {
+		this.props.changeGeneName(newGeneName, newDatabase, newSecondTitle);
+		this.props.changeGeneCount(1);
 	},
 	/*
 	* Event listener for when the user hits the next button in the bottom nav
