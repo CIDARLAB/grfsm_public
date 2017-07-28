@@ -30,7 +30,7 @@ export function GenerateZip(data, getGeneInformation, genes, done) {
 
 			zip.generateAsync({type:"blob"})
 			.then(function (blob) {
-			    FileSaver.saveAs(blob, "touchDown.zip");
+			    FileSaver.saveAs(blob, "AllCircuits.zip");
 			   	done();
 			});
 		})
