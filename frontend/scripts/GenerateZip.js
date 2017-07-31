@@ -13,7 +13,7 @@ export function GenerateZip(data, getGeneInformation, genes, done) {
 
 	File.getGeneList_Promise(geneList).then(
 	resp => {
-		console.log(resp);
+		// console.log(resp);
 		sequenceList = resp;
 
 		Promise.all(data[0].map(circuit =>
@@ -42,11 +42,11 @@ function CreateFile_Promise(circuit, partMap, getGeneInformation, sequenceList) 
         function (resolve, reject) {
 
         	let partNameList = CreatePartList(circuit, partMap, getGeneInformation);
-            console.log("[GenerateZip:CreateFile_Promise] " + partNameList);
+            // console.log("[GenerateZip:CreateFile_Promise] " + partNameList);
 
         	File.writeFilePromisified(partNameList, sequenceList).then(
 			resp => {
-				console.log(resp);
+				// console.log(resp);
 				if(resp !== undefined) {resolve(resp);}
 				else {reject(new Error("GenerateZip.js function \"CreatePartList\" returned nothing"))};
 				}

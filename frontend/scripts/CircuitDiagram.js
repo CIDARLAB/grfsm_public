@@ -398,8 +398,7 @@ const CircuitDiagram = React.createClass({
 			else
 			{
 				this.setState({isZipReady: "loading"});
-				let done = this.doneLoadingZip.bind(this);
-				Zip.GenerateZip(data, this.getGeneInformation, this.props.genes, done);
+				Zip.GenerateZip(data, this.getGeneInformation, this.props.genes, this.doneLoadingZip);
 			}
 		}
 	},

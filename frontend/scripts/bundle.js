@@ -71886,8 +71886,7 @@ var CircuitDiagram = React.createClass({
 				return false;
 			} else {
 				this.setState({ isZipReady: "loading" });
-				var done = this.doneLoadingZip.bind(this);
-				Zip.GenerateZip(data, this.getGeneInformation, this.props.genes, done);
+				Zip.GenerateZip(data, this.getGeneInformation, this.props.genes, this.doneLoadingZip);
 			}
 		}
 	},
@@ -74388,14 +74387,12 @@ function writeFilePromisified(nameList, partList) {
 }
 
 function writeFile(nameList, partList) {
-	var textFile = "LOCUS";
+	var textFile = "";
 	var date = new Date();
 	var fullSequence = '';
 
 	var monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
-	textFile += addSpace(7) + "grfsm_gb" + addSpace(12) + "2143" + addSpace(1) + "bp" + addSpace(1) + "ds-DNA" + addSpace(5) + "circular" + addSpace(5) + date.getDate() + "-" + monthNames[date.getMonth()] + "-" + date.getFullYear();
-	textFile += addNewLine(1);
 	textFile += "DEFINITION" + addTabs(1) + ".";
 	textFile += addNewLine(1);
 	textFile += "KEYWORDS" + addSpace(4) + "Created" + addSpace(1) + "by" + addSpace(1) + "the" + addSpace(1) + "LCP" + addSpace(1) + "project" + addSpace(1) + "grfsm" + addSpace(1) + "tool";
@@ -74464,6 +74461,8 @@ function writeFile(nameList, partList) {
 	textFile += generateSequence(fullSequence);
 	textFile += addNewLine(1);
 	textFile += "//";
+
+	textFile = "LOCUS" + addSpace(7) + "grfsm_gb" + addSpace(12) + fullSequence.length + addSpace(1) + "bp" + addSpace(1) + "ds-DNA" + addSpace(5) + "circular" + addSpace(5) + date.getDate() + "-" + monthNames[date.getMonth()] + "-" + date.getFullYear() + addNewLine(1) + textFile;
 
 	return textFile;
 }
@@ -74630,7 +74629,7 @@ function GenerateZip(data, getGeneInformation, genes, done) {
 	});
 
 	File.getGeneList_Promise(geneList).then(function (resp) {
-		console.log(resp);
+		// console.log(resp);
 		sequenceList = resp;
 
 		Promise.all(data[0].map(function (circuit) {
@@ -74644,7 +74643,7 @@ function GenerateZip(data, getGeneInformation, genes, done) {
 			});
 
 			zip.generateAsync({ type: "blob" }).then(function (blob) {
-				FileSaver.saveAs(blob, "touchDown.zip");
+				FileSaver.saveAs(blob, "AllCircuits.zip");
 				done();
 			});
 		});
@@ -74655,10 +74654,10 @@ function CreateFile_Promise(circuit, partMap, getGeneInformation, sequenceList) 
 	return new Promise(function (resolve, reject) {
 
 		var partNameList = CreatePartList(circuit, partMap, getGeneInformation);
-		console.log("[GenerateZip:CreateFile_Promise] " + partNameList);
+		// console.log("[GenerateZip:CreateFile_Promise] " + partNameList);
 
 		File.writeFilePromisified(partNameList, sequenceList).then(function (resp) {
-			console.log(resp);
+			// console.log(resp);
 			if (resp !== undefined) {
 				resolve(resp);
 			} else {

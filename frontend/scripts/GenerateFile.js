@@ -24,14 +24,12 @@ export function writeFilePromisified(nameList, partList) {
 }
 
 function writeFile(nameList, partList) {
-	let textFile = "LOCUS";
+	let textFile = "";
 	let date = new Date();
 	let fullSequence = '';
 
 	let monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
-	textFile += addSpace(7)+"grfsm_gb"+addSpace(12)+"2143"+addSpace(1)+"bp"+addSpace(1)+"ds-DNA"+addSpace(5)+"circular"+addSpace(5)+date.getDate()+"-"+monthNames[date.getMonth()]+"-"+date.getFullYear();
-	textFile += addNewLine(1);
 	textFile += "DEFINITION"+addTabs(1)+".";
 	textFile += addNewLine(1);
 	textFile += "KEYWORDS"+addSpace(4)+"Created"+addSpace(1)+"by"+addSpace(1)+"the"+addSpace(1)+"LCP"+addSpace(1)+"project"+addSpace(1)+"grfsm"+addSpace(1)+"tool";
@@ -110,6 +108,9 @@ function writeFile(nameList, partList) {
 	textFile += generateSequence(fullSequence);
 	textFile += addNewLine(1);
 	textFile += "//";
+
+	textFile = "LOCUS"+addSpace(7)+"grfsm_gb"+addSpace(12)+fullSequence.length+addSpace(1)+"bp"+addSpace(1)+"ds-DNA"+addSpace(5)+"circular"+
+	addSpace(5)+date.getDate()+"-"+monthNames[date.getMonth()]+"-"+date.getFullYear()+addNewLine(1)+textFile;
 
 	return textFile;
 }
