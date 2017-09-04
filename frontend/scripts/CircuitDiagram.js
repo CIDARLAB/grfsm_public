@@ -56,7 +56,8 @@ const CircuitDiagram = React.createClass({
 				display: 'none',
 			},
 			partNameArray: [],
-			isZipReady: "false"
+			isZipReady: "false",
+			isBuildReady: "false"
 			};
 	},
 	/*
@@ -403,14 +404,41 @@ const CircuitDiagram = React.createClass({
 		}
 	},
 
+	clickedBuild(){
+		// console.log("[CircuitDiagram:clickedBuild()]");
+		const data = this.state.data;
+
+		if (data.length !== 0) {
+			//Check for errors
+			if (data[0][0] === 'Gene regulation program does not exist' || data[0][0] === 'No registers found' || data[0][0] === 'Design does not exist') {
+				return false;
+			}
+			else
+			{
+				this.setState({isBuildReady: "loading"});
+				Zip.GenerateBuild(data, this.getGeneInformation, this.props.genes, this.doneLoadingBuild, true);
+			}
+		}
+	},
+
 	doneLoadingZip(){
 		// console.log("[CircuitDiagram:doneLoadingZip()]");
 		this.setState({isZipReady: "false"});
 	},
 
+	doneLoadingBuild(){
+		// console.log("[CircuitDiagram:doneLoadingZip()]");
+		this.setState({isBuildReady: "false"});
+	},
+
 	downloadZip(){
 		// console.log("[CircuitDiagram:downloadZip()] " + pathToZip);
 		window.location.href = this.state.pathToZip;
+	},
+
+	downloadBuild(){
+		// console.log("[CircuitDiagram:downloadZip()] " + pathToZip);
+		window.location.href = this.state.pathToBuild;
 	},
 
 	/*
@@ -580,6 +608,7 @@ const CircuitDiagram = React.createClass({
 					clickedPDF = {this.clickedPDF}
 					clickedDownload = {this.clickedDownload}
 					clickedZip = {this.clickedZip}
+					clickedBuild = {this.clickedBuild}
 					isZipReady = {this.state.isZipReady}
 				/>
 				<GeneticCircuit
@@ -684,6 +713,7 @@ const CircuitDiagram = React.createClass({
 					clickedPDF = {this.clickedPDF}
 					clickedDownload = {this.clickedDownload}
 					clickedZip = {this.clickedZip}
+					clickedBuild = {this.clickedBuild}
 					isZipReady = {this.state.isZipReady}
 				/>
 				<GeneticCircuit
@@ -752,6 +782,7 @@ const CircuitDiagram = React.createClass({
 					clickedPDF = {this.clickedPDF}
 					clickedDownload = {this.clickedDownload}
 					clickedZip = {this.clickedZip}
+					clickedBuild = {this.clickedBuild}
 					isZipReady = {this.state.isZipReady}
 				/>
 				<DiagramIllustration
@@ -786,6 +817,7 @@ const CircuitDiagram = React.createClass({
 						clickedPDF = {this.clickedPDF}
 						clickedDownload = {this.clickedDownload}
 						clickedZip = {this.clickedZip}
+						clickedBuild = {this.clickedBuild}
 						isZipReady = {this.state.isZipReady}
 					/>
 					<DiagramIllustration3Input
@@ -955,6 +987,10 @@ const CircuitDiagramNavBar = React.createClass({
 		this.props.clickedZip();
 	},
 
+	clickedBuild(){
+		this.props.clickedBuild();
+	},
+
 	downloadZip(){
 		this.props.downloadZip();
 	},
@@ -1026,6 +1062,7 @@ const CircuitDiagramNavBar = React.createClass({
 
 		let toReturn = null;
 		let zipLink = null;
+		let buildLink = null;
 		if (noCircuitsWereFound) {
 			// Do not show PDF button
 			toReturn = <div style={navBarStyles}>
@@ -1095,6 +1132,29 @@ const CircuitDiagramNavBar = React.createClass({
 				onMouseEnter = {this.onMouseEnterPrint} height="31" onMouseLeave = {this.onMouseEnterPrint}
 				/>
 			}
+			if(this.props.isBuildReady == "true")
+			{
+				buildLink =
+				<input type = {'button'} value = {'Download Build Files'}
+				onClick = {this.downloadBuild} style = {printButtonStyle}
+				onMouseEnter = {this.onMouseEnterPrint} height="31" onMouseLeave = {this.onMouseEnterPrint}
+				/>
+			}
+			else if(this.props.isBuildReady == "loading")
+			{
+				buildLink =
+				<input type = {'button'} value = {'Loading...'} style = {printButtonStyle}
+				onMouseEnter = {this.onMouseEnterPrint} height="31" onMouseLeave = {this.onMouseEnterPrint}
+				/>
+			}
+			else
+			{
+				buildLink =
+				<input type = {'button'} value = {'Generate Build Files'}
+				onClick = {this.clickedBuild} style = {printButtonStyle}
+				onMouseEnter = {this.onMouseEnterPrint} height="31" onMouseLeave = {this.onMouseEnterPrint}
+				/>
+			}
 			toReturn =
 			<div style={navBarStyles}>
 							<div style={bufferStyle}></div>
@@ -1135,6 +1195,7 @@ const CircuitDiagramNavBar = React.createClass({
 									</text>
 								</svg>
 							</div>
+							{buildLink}
 							{zipLink}
 							<input
 								type = {'button'} value = {'Download .gb File'}

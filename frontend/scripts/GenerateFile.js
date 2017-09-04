@@ -3,7 +3,7 @@ var FileSaver = require('file-saver');
 export var GenerateFile = function(nameList) {
 	getGeneList_Promise(nameList).then(
 	seqList => {
-			writeFilePromisified(nameList, seqList).then(
+			writeFilePromisified(nameList, seqList, {}).then(
 				resp => {
 					// console.log(resp);
 					let blob = new Blob([resp], {type: "text/plain;charset=utf-8"});
@@ -13,20 +13,22 @@ export var GenerateFile = function(nameList) {
 	});
 };
 
-export function writeFilePromisified(nameList, partList) {
+export function writeFilePromisified(nameList, partList, buildOptions) {
     return new Promise(
         function (resolve, reject) {
-            let textFile = writeFile(nameList, partList);
+            let textFile = writeFile(nameList, partList, buildOptions);
             if(textFile !== undefined) {resolve(textFile);}
             else {reject(new Error("GenerateFile.js function \"writeFile\" returned nothing"))};
         }
     );
 }
 
-function writeFile(nameList, partList) {
+function writeFile(nameList, partList, buildOptions) {
 	let textFile = "";
 	let date = new Date();
 	let fullSequence = '';
+	let fileName = '';
+	let _partName = '';
 
 	let monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
@@ -41,16 +43,15 @@ function writeFile(nameList, partList) {
 		if(name.title in hardCodedParts)
 		{
 			let correctedSequence = hardCodedParts[name.title].toLowerCase();
-			// if(name.flip)
-			// {
-			// 	correctedSequence = reverseAndComplement(correctedSequence);
-			// }
+			if(name.flip)
+			{
+				correctedSequence = Complement(correctedSequence);
+			}
 			fullSequence += correctedSequence;
 			textFile += addNewLine(1);
 			textFile += addSpace(5)+name.feature+addSpace(24-name.feature.toString().length);
 			if(name.flip)
 			{
-				// textFile += "complement(" + (currentBPNum + correctedSequence.length - 1) + ".." + currentBPNum + ")";
 				textFile += "complement(" + currentBPNum + ".." + (currentBPNum + correctedSequence.length - 1) + ")";
 			}
 			else
@@ -60,6 +61,28 @@ function writeFile(nameList, partList) {
 			currentBPNum += hardCodedParts[name.title].length;
 			textFile += addNewLine(1);
 			textFile += addSpace(29)+"/label=\""+name.title+"\"";
+		}
+		else if(buildOptions.build)
+		{
+			fileName = name.title;
+			fullSequence += name.sequence;
+			textFile += addNewLine(1);
+			textFile += addSpace(5)+name.feature+addSpace(24-name.feature.toString().length);
+			textFile += currentBPNum+".."+(currentBPNum + name.sequence.length - 1);
+			currentBPNum += name.sequence.length;
+			textFile += addNewLine(1);
+			textFile += addSpace(29)+"/label=\""+name.title+"\"";
+
+			if(name.initSeq)
+			{
+				_partName = {
+		    		sequence:name.initSeq+name.mainSeq+name.lastSeq,
+		    		title:name.title, 
+		    		temp:name.temp,
+		    		feature:"assembly_part",
+		    		flip:false
+		    	};
+			}
 		}
 		else
 		{
@@ -76,10 +99,10 @@ function writeFile(nameList, partList) {
 			}
 			let reducedString = partList[indexNum].sequence;
 			let correctedSequence = reducedString.toLowerCase();
-			// if(name.flip)
-			// {
-			// 	correctedSequence = reverseAndComplement(correctedSequence);
-			// }
+			if(name.flip)
+			{
+				correctedSequence = Complement(correctedSequence);
+			}
 			fullSequence += correctedSequence;
 			textFile += addNewLine(1);
 			textFile += addSpace(5)+name.feature+addSpace(24-name.feature.toString().length);
@@ -112,7 +135,22 @@ function writeFile(nameList, partList) {
 	textFile = "LOCUS"+addSpace(7)+"grfsm_gb"+addSpace(12)+fullSequence.length+addSpace(1)+"bp"+addSpace(1)+"ds-DNA"+addSpace(5)+"circular"+
 	addSpace(5)+date.getDate()+"-"+monthNames[date.getMonth()]+"-"+date.getFullYear()+addNewLine(1)+textFile;
 
-	return textFile;
+	if(buildOptions.build)
+	{
+		let partFile = {};
+		if(_partName != '')
+		{
+			partFile = writeFile([_partName], partList, buildOptions);
+		}
+		else
+		{
+			partFile = {text:{primer:undefined},title:{primer:undefined}};
+		}
+
+		return {text:{primer:textFile,part:partFile.text.primer}, title:{primer:fileName,part:partFile.title.primer}};
+	}
+	else
+		return textFile;
 }
 
 export function getGeneList_Promise(nameList) {
@@ -169,7 +207,7 @@ export function getGeneList_Promise(nameList) {
     );
 }
 
-function generateSequence(fullSequence) {
+export function generateSequence(fullSequence) {
 	let text = '';
 	const segmentsPerLine = 6;
 	const segmentLength = 10;
@@ -196,25 +234,28 @@ function generateSequence(fullSequence) {
 	return text;
 }
 
-function reverseAndComplement(sequence) {
-	let tempSeq = '';
+export function ReverseAndComplement(sequence) {
 	let text = '';
-	tempSeq = sequence.split("").reverse().join("");
-	// console.log(tempSeq);
+	let tempSeq = sequence.split("").reverse().join("");
+	tempSeq = Complement(tempSeq);
+	return tempSeq;
+}
 
-	for(let i=0; i<tempSeq.length;i++)
+export function Complement(sequence) {
+	let text = '';
+
+	for(let i=0; i<sequence.length;i++)
 	{
-		if(tempSeq[i]=='a') {text += 't';}
-		else if(tempSeq[i]=='c') {text += 'g';}
-		else if (tempSeq[i]=='g') {text += 'c';}
-		else if (tempSeq[i]=='t') {text += 'a';}
+		if(sequence[i]=='a') {text += 't';}
+		else if(sequence[i]=='c') {text += 'g';}
+		else if (sequence[i]=='g') {text += 'c';}
+		else if (sequence[i]=='t') {text += 'a';}
 	}
 
-	// console.log(text);
 	return text;
 }
 
-function addNewLine(num) {
+export function addNewLine(num) {
 	let text = '';
 	for(let i=0; i<num; i++)
 	{
@@ -223,7 +264,7 @@ function addNewLine(num) {
 	return text;
 }
 
-function addTabs(num) {
+export function addTabs(num) {
 	let text = '';
 	for(let i=0; i<num; i++)
 	{
@@ -232,7 +273,7 @@ function addTabs(num) {
 	return text;
 }
 
-function addSpace(num) {
+export function addSpace(num) {
 	let text = '';
 	for(let i=0; i<num; i++)
 	{
@@ -241,7 +282,7 @@ function addSpace(num) {
 	return text;
 }
 
-const hardCodedParts = {
+export const hardCodedParts = {
 	proD: "GCACTGAAGGTCCTCAATCGCACTGGAAACATCAAGGTCGaaagttaaacaaaattatttgtagagggaaaccgttgtggtctccctgaatatattatacgagccttatgcatgcccgtaaagttatccagcaaccactcatagacctagggcagcagatagggacgacgtggtgttagctgtgCTGACCTCCTGCCAGCAATAGTAAGACAACACGCAAAGTC",
 	TP901B_AG: "GCTGGGAGTTCGTAGACGGAAACAAACGCAGAATCCAAGCatgccaacacaattaacatcagaatcaaggtaaatgctttttgctttttttgcGCACTGAAGGTCCTCAATCGCACTGGAAACATCAAGGTCG",
 	TP901B_TC: "CATTACTCGCATCCATTCTCAGGCTGTCTCGTCTCGTCTCatgccaacacaattaacatctcaatcaaggtaaatgctttttgctttttttgcGCTGGGAGTTCGTAGACGGAAACAAACGCAGAATCCAAGC",
@@ -249,6 +290,9 @@ const hardCodedParts = {
 	TP901P_TC: "CCTCGTCTCAACCAAAGCAATCAACCCATCAACCACCTGGaaaggagttttttagttaccttaattgaaataaacgaaataaaaactcgcGTTCCTTATCATCTGGCGAATCGGACCCACAAGAGCACTG",
 	BxBIB_GT: "CTGACCTCCTGCCAGCAATAGTAAGACAACACGCAAAGTCcggccggcttgtcgacgacggcggtctccgtcgtcaggatcatccgggcGAGCCAACTCCCTTTACAACCTCACTCAAGTCCGTTAGAG",
 	BxBIP_GT: "CAAGACGCTGGCTCTGACATTTCCGCTACTGAACTACTCGgtcgtggtttgtctggtcaaccaccgcggtctcagtggtgtacggtacaaaccccgacCCTCGTCTCAACCAAAGCAATCAACCCATCAACCACCTGG",
-	terminator_red: "GGGGGGGGGGGG", //12 G's - temporary
-	terminator_black: "AAAAAAAAAAAA" //12 A's - temporary
+	//Used this bidirectional terminator: http://parts.igem.org/Part:BBa_B0011
+	//>BBa_B0011 Part-only sequence (46 bp)
+	// agagaatataaaaagccagattattaatccggcttttttattattt
+	terminator_red: "AGAGAATATAAAAAGCCAGATTATTAATCCGGCTTTTTTATTATTT",
+	terminator_black: "AGAGAATATAAAAAGCCAGATTATTAATCCGGCTTTTTTATTATTT"
 };
